@@ -1,8 +1,8 @@
 # Flights Chatbot Assistant
 
-**Objective**: Have a chatbot assistant for customers of an airline that can respond to their inquiries and questions about their flights, seat upgrades, miles redemption and check-in process
+**Objective**: Provide an airline customer assistant platform where users can register, log in, search and book flights, manage and cancel bookings, and quickly get answers to common questions through a chatbot.
 
-## User stories:
+## User stories
 
 | # | User Story | Acceptance Criteria | REST Endpoint |
 |---|------------|---------------------|----------------|
