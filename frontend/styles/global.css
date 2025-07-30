@@ -37,7 +37,7 @@ a {
   all: unset;
   /* Resets all inherited default styles */
   cursor: pointer;
-  /* Asegura que se mantenga el cursor de enlace */
+  /* Ensures the link cursor is maintained */
 }
 
 h1,
