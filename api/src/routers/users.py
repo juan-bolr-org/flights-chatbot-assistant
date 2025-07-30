@@ -27,7 +27,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     # Here we should sent the email if we have enough time :3
     return Token(access_token=access_token, token_type="bearer")
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=UserResponse)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
