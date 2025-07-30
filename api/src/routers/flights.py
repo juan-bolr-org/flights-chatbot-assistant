@@ -13,8 +13,7 @@ router = APIRouter(prefix="/flights", tags=["flights"])
 def search_flights(
     origin: str, 
     destination: str, 
-    departure_date: str, 
-    current_user: User = Depends(get_current_user), 
+    departure_date: str,
     db: Session = Depends(get_db)
 ):
     # Parse the departure date
@@ -56,7 +55,6 @@ def create_flight(
 
 @router.get("/list", response_model=List[FlightResponse])
 def list_flights(
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     flights = db.query(Flight).all()

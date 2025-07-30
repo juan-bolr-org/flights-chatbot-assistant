@@ -25,6 +25,7 @@ class Flight(Base):
     airline = Column(String, nullable=False)
     status = Column(String, default='scheduled')
     bookings = relationship('Booking', back_populates='flight')
+    price = Column(Integer, nullable=False)
 
 class Booking(Base):
     __tablename__ = 'bookings'

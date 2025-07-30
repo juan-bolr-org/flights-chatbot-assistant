@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from schemas import UserCreate, UserLogin, Token
+from schemas import UserCreate, UserLogin, Token, UserResponse
 from models import User
 from utils import get_db, get_password_hash, verify_password, create_access_token
 
@@ -25,7 +25,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     
     access_token = create_access_token(data={"sub": new_user.email})
     # Here we should sent the email if we have enough time :3
-    return {"access_token": access_token, "token_type": "bearer"}
+    return Token(access_token=access_token, token_type="bearer")
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -34,4 +34,11 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
     access_token = create_access_token(data={"sub": db_user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return UserResponse(
+        id=db_user.id,
+        name=db_user.name,
+        email=db_user.email,
+        phone=db_user.phone,
+        created_at=db_user.created_at,
+        token=Token(access_token=access_token, token_type="bearer")
+    )

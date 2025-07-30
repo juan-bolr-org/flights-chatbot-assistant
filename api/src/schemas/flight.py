@@ -14,6 +14,7 @@ class FlightCreate(BaseModel):
     arrival_time: datetime.datetime
     airline: str
     status: Optional[str] = "scheduled"
+    price: float
 
 class FlightResponse(BaseModel):
     id: int
@@ -23,6 +24,7 @@ class FlightResponse(BaseModel):
     arrival_time: datetime.datetime
     airline: str
     status: str
+    price: float
 
     class Config:
         from_attributes = True

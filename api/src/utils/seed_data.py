@@ -35,7 +35,8 @@ def create_fake_flights(db, fake, n=20):
             departure_time=departure,
             arrival_time=arrival,
             airline=fake.company(),
-            status="scheduled"
+            status="scheduled",
+            price=random.uniform(100, 1000)
         )
         db.add(flight)
         flights.append(flight)
