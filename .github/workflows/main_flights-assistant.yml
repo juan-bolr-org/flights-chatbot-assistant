@@ -24,13 +24,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Create and start virtual environment
+      - name: Create and start virtual environment and Install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+          cd api
+          pip install -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
@@ -62,6 +61,18 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_8312BBB048F64FB1B83015F8A081852E }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_20177BFDB31F4CA286875DD7BC1A9889 }}
 
+      - name: Set Azure Web App startup command
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'flights-assistant'
+          slot-name: 'Production'
+          app-settings-json: |
+            [
+              {
+                "name": "STARTUP_COMMAND",
+                "value": "cd api/src && uvicorn main:app --host 0.0.0.0 --port $PORT"
+              }
+            ]
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
