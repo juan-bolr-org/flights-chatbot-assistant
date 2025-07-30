@@ -8,10 +8,12 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 from langchain.chat_models import init_chat_model
 
+import __main__
+
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 # Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
-flight_docs_path = Path(__file__).parent.parent.parent / "chatbot" / "flight_docs.pkl"
+flight_docs_path = Path(__file__).parent.parent.parent.parent / "chatbot" / "flight_docs.pkl"
 with open(flight_docs_path, "rb") as f:
     flight_splits = pickle.load(f)
 
