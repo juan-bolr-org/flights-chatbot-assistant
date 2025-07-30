@@ -13,7 +13,7 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 
         const response = await res.json();
 
-        if (!response.access_token) {
+        if (!response) {
             throw new Error('Unexpected server response');
         }
 
@@ -42,8 +42,9 @@ export async function login({
         });
 
         const response = await res.json();
+        console.log('Login response:', response);
 
-        if (!response.access_token) {
+        if (!response) {
             throw new Error('Unexpected server response');
         }
 

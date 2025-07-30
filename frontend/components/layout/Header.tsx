@@ -69,8 +69,7 @@ export default function Header() {
               <DropdownMenu.Trigger>
                 <Button variant="soft">
                   <Avatar
-                    src="https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?&w=256&h=256&q=70&crop=focalpoint&fp-x=0.5&fp-y=0.3&fp-z=1&fit=crop"
-                    fallback="A"
+                    fallback={user.name.charAt(0).toUpperCase()}
                     size="2"
                   />
                   <DropdownMenu.TriggerIcon />
@@ -78,9 +77,10 @@ export default function Header() {
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Item>
-                  <Button variant="surface" onClick={handleLogout}>
-                    Log out
-                  </Button>
+                  <Text>{user.name}</Text>
+                </DropdownMenu.Item>
+                <DropdownMenu.Item onClick={handleLogout}>
+                  Log out
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>

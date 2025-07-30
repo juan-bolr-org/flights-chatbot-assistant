@@ -1,8 +1,16 @@
+import { User } from "lucide-react";
+
+export interface Token {
+    access_token: string;
+    token_type: string;
+}
+
 export interface User {
     id: number
     email: string
     name: string
     phone: string
+    token: Token
     created_at: string
 }
 
@@ -20,7 +28,4 @@ export interface RegisterData extends LoginCredentials {
     name: string
 }
 
-export interface AuthResponse {
-    access_token: string
-    user: User
-}
+export type AuthResponse = User;

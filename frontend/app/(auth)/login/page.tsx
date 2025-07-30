@@ -48,9 +48,9 @@ export default function LoginPage() {
     clearErrors();
     try {
       const result = await login({ email: data.email, password: data.password });
-
-      if (result?.access_token) {
-        localStorage.setItem('token', result.access_token);
+      
+      if (result) {
+        localStorage.setItem('token', result.token.access_token);
         router.push('/');
       } else {
         setError('root', { message: 'Invalid credentials. Please try again.' });

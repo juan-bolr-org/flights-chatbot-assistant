@@ -53,8 +53,8 @@ export default function RegisterPage() {
         password: data.password,
       });
 
-      if (response.access_token) {
-        localStorage.setItem('token', response.access_token);
+      if (response) {
+        localStorage.setItem('token', response.token.access_token);
         localStorage.setItem('registerSuccess', 'true');
         router.push('/register/success');
       } else {
