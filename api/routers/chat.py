@@ -1,0 +1,40 @@
+from fastapi import APIRouter
+from pydantic import BaseModel
+import pickle
+from pathlib import Path
+
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.tools.retriever import create_retriever_tool
+from langchain.chat_models import init_chat_model
+
+router = APIRouter(prefix="/chat", tags=["chat"])
+
+# Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
+flight_docs_path = Path(__file__).parent.parent.parent / "chatbot" / "flight_docs.pkl"
+with open(flight_docs_path, "rb") as f:
+    flight_splits = pickle.load(f)
+
+vectorstore = InMemoryVectorStore.from_documents(
+    documents=flight_splits, embedding=OpenAIEmbeddings()
+)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
+retriever_tool = create_retriever_tool(
+    retriever,
+    "retrieve_flights",
+    "Recupera información sobre vuelos según la consulta proporcionada",
+)
+response_model = init_chat_model("openai:gpt-4.1", temperature=0)
+
+class ChatRequest(BaseModel):
+    content: str
+
+class ChatResponse(BaseModel):
+    response: str
+
+@router.post("/", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    docs = retriever_tool.invoke({"query": request.content})
+    full_prompt = f'Contexto:\n{docs}\n\nPregunta del usuario: {request.content}'
+    response = response_model.invoke(full_prompt).content
+    return ChatResponse(response=response)
