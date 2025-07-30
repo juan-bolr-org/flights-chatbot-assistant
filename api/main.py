@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from db import init_db
 from routers import users_router, flights_router, bookings_router
+from utils import init_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_data()
     yield
 
 app = FastAPI(

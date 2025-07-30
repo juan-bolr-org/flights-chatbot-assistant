@@ -5,3 +5,4 @@ pydantic
 pydantic[email]
 python-jose
 passlib[bcrypt]
+faker

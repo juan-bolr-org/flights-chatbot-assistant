@@ -5,6 +5,7 @@ from .auth import (
     create_access_token,
     get_current_user
 )
+from .seed_data import init_data
 
 __all__ = [
     "get_db",
