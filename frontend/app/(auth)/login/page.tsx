@@ -6,7 +6,17 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { login } from '@/lib/api/auth';
-import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
+import {
+  Button,
+  TextField,
+  Callout,
+  Flex,
+  Container,
+  Box,
+  Heading,
+  Text,
+} from '@radix-ui/themes';
+import { EnvelopeClosedIcon, LockClosedIcon } from '@radix-ui/react-icons';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email' }),
@@ -51,89 +61,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-50 pt-20 px-4 sm:px-6 lg:px-8">
-      <div className="card gradient-border max-w-md w-full space-y-6">
-        <div>
-          <h2 className="text-center text-2xl font-extrabold gradient-text">
-            Sign In
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Need an account?{' '}
-            <Link href="/register" className="text-[var(--color-pink)] hover:text-[var(--color-pink-dark)]">
-              Register here
-            </Link>
-          </p>
-        </div>
+    <Flex justify="center" align="center" px="4" py="100px">
+      <Box className="bg-white shadow-md rounded-xl p-6 w-full max-w-sm">
+        <Heading as="h1" size="5" mb="4" align="center">
+          Login
+        </Heading>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
-          {errors.root && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {errors.root.message}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                className="input mt-1"
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Flex direction="column" gap="4">
+            {/* Email */}
+            <Flex direction="column" gap="1">
+              <TextField.Root
+                variant="surface"
+                placeholder="email"
                 {...register('email')}
-                aria-invalid={!!errors.email}
-              />
+                size="3"
+              >
+                <TextField.Slot side="left">
+                  <EnvelopeClosedIcon />
+                </TextField.Slot>
+              </TextField.Root>
               {errors.email && (
-                <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+                <Callout.Root color="red">
+                  <Callout.Text>{errors.email.message}</Callout.Text>
+                </Callout.Root>
               )}
-            </div>
+            </Flex>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
+            {/* Password */}
+            <Flex direction="column" gap="1">
+              <TextField.Root
+                variant="surface"
                 type="password"
-                autoComplete="current-password"
-                className="input mt-1"
+                placeholder="password"
                 {...register('password')}
-                aria-invalid={!!errors.password}
-              />
+                size="3"
+              >
+                <TextField.Slot side="left">
+                  <LockClosedIcon />
+                </TextField.Slot>
+              </TextField.Root>
               {errors.password && (
-                <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+                <Callout.Root color="red">
+                  <Callout.Text>{errors.password.message}</Callout.Text>
+                </Callout.Root>
               )}
-            </div>
-          </div>
+            </Flex>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn btn-primary w-full"
-            >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </button>
-          </div>
+            {/* Error general */}
+            {errors.root?.message && (
+              <Callout.Root color="red">
+                <Callout.Text>{errors.root.message}</Callout.Text>
+              </Callout.Root>
+            )}
+
+            <Button type="submit" size="3" className='btn-primary' highContrast disabled={isSubmitting}>
+              Sign In
+            </Button>
+
+            <Text size="2" align="center">
+              No account? {' '}
+              <Link href="/register" className="text-blue-600 hover:underline">
+                Register here
+              </Link>
+            </Text>
+          </Flex>
         </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or sign in with</span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <SocialLoginButtons />
-          </div>
-        </div>
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 }

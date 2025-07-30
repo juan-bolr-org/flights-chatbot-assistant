@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { getFlights } from '@/lib/api/flights';
 import { Flight } from '@/lib/types/flight';
 import { FlightCard } from '@/components/flights/FlightCard';
+
+import { Button } from '@radix-ui/themes';
+import { Text, Flex, Container, Section, Box } from '@radix-ui/themes';
 
 const FLIGHTS_PER_PAGE = 8;
 
@@ -12,13 +16,18 @@ export default function FlightsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const hasFetched = useRef(false);
+    const router = useRouter();
 
     useEffect(() => {
+        if (hasFetched.current) return;
+        hasFetched.current = true;
+
         const fetchFlights = async () => {
             const jwt = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
             if (!jwt) {
-                setError("No token found.");
-                setIsLoading(false);
+                router.push('/login');
                 return;
             }
 
@@ -33,7 +42,7 @@ export default function FlightsPage() {
         };
 
         fetchFlights();
-    }, []);
+    }, [router]);
 
     const totalPages = Math.ceil(flights.length / FLIGHTS_PER_PAGE);
     const paginatedFlights = flights.slice(
@@ -52,7 +61,7 @@ export default function FlightsPage() {
     if (isLoading) {
         return (
             <div className="p-4 text-center">
-                <p>Loading...</p>
+                <Text>Loading...</Text>
             </div>
         );
     }
@@ -60,54 +69,51 @@ export default function FlightsPage() {
     if (error) {
         return (
             <div className="p-4 text-center">
-                <p className="text-red-600">{error}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 btn btn-primary"
-                >
-                    Try again
-                </button>
+                <Text color="red">{error}</Text>
+                <div className="mt-4">
+                    <Button onClick={() => window.location.reload()} color="indigo" variant="solid">
+                        Try again
+                    </Button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto pb-4 px-4">
-            <section>
-                <h2 className="text-2xl font-bold text-white-900 mb-6 pt-6">All Flights</h2>
-                <div className="flex flex-wrap gap-6 justify-start">
+        <Container align={'center'} size="3" py="2">
+            <Section>
+
+                <Box pb="6">
+                    <Text size="6" weight="bold" py="3">
+                        All Flights
+                    </Text>
+                </Box>
+
+                <Flex wrap={'wrap'} justify="around" align={'start'} gap="4">
                     {paginatedFlights.length > 0 ? (
                         paginatedFlights.map((flight) => (
                             <FlightCard flight={flight} key={flight.id} />
                         ))
                     ) : (
-                        <p>There are no flights available.</p>
+                        <Text>No flights available.</Text>
                     )}
-                </div>
-
-                {/* Pagination Controls */}
+                </Flex>
+            </Section>
+            <Section py="6">
                 {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-4 mt-8">
-                        <button
-                            onClick={goToPreviousPage}
-                            disabled={currentPage === 1}
-                            className="btn btn-outline"
-                        >
+                    <Flex justify={'around'} align="center" gap="4">
+                        <Button onClick={goToPreviousPage} disabled={currentPage === 1} variant="soft">
                             Previous
-                        </button>
-                        <span className="text-gray-700">
+                        </Button>
+                        <Text color="gray">
                             Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                            onClick={goToNextPage}
-                            disabled={currentPage === totalPages}
-                            className="btn btn-outline"
-                        >
+                        </Text>
+                        <Button onClick={goToNextPage} disabled={currentPage === totalPages} variant="soft">
                             Next
-                        </button>
-                    </div>
+                        </Button>
+                    </Flex>
                 )}
-            </section>
-        </div>
+            </Section>
+        </Container>
     );
 }

@@ -1,38 +1,48 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Box, Container, Heading, Text, Button, Flex, Card } from "@radix-ui/themes";
 
 export default function RegisterSuccessPage() {
     const router = useRouter();
+    const [showPage, setShowPage] = useState(false);
 
     useEffect(() => {
-        // Solo permite acceso si la bandera está presente
-        if (typeof window !== "undefined") {
-            const ok = sessionStorage.getItem("registerSuccess");
-            if (!ok) {
-                router.replace("/register");
-            } else {
-                // Limpia la bandera para que no se pueda recargar la página de éxito
-                sessionStorage.removeItem("registerSuccess");
-            }
+        const successFlag = localStorage.getItem("registerSuccess");
+        if (successFlag) {
+            localStorage.removeItem("registerSuccess");
+            setShowPage(true);
+        } else {
+            router.push("/register");
         }
     }, [router]);
 
+    if (!showPage) return null;
+
     return (
-        <main className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-            <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
-                <h1 className="text-2xl font-bold text-rose-700 mb-4">¡Registro exitoso!</h1>
-                <p className="text-gray-700 mb-6">
-                    Account Created, Yay!
-                </p>
-                <a
-                    href="/login"
-                    className="btn btn-primary w-full"
-                >
-                    Go Login bro.
-                </a>
-            </div>
-        </main>
+        <Container size="3" pt="6" pb="6">
+            <Flex direction="column" align="center" justify="center" style={{ minHeight: "60vh" }}>
+                <Card size="4" style={{ width: "100%", maxWidth: "400px" }}>
+                    <Flex direction="column" gap="4" align="center">
+                        <Heading as="h1" size="6" color="blue">
+                            Registered successfully!
+                        </Heading>
+                        <Text size="3" color="gray">
+                            Account Created, Yay!
+                        </Text>
+                        <Button
+                            color="blue"
+                            variant="solid"
+                            highContrast
+                            onClick={() => router.push("/login")}
+                            style={{ width: "100%" }}
+                        >
+                            Go Login bro.
+                        </Button>
+                    </Flex>
+                </Card>
+            </Flex>
+        </Container>
     );
 }

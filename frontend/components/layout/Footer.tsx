@@ -1,38 +1,68 @@
 // components/Footer.tsx
+'use client';
+
+import { Box, Text, Flex } from "@radix-ui/themes";
 import Link from "next/link";
 
 export default function Footer() {
     return (
-        <footer className="mt-10 gradient-border-top">
-            <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-900">
-                <div>
-                    <h3 className="font-bold text-lg mb-2">Flight Assistant Chatbot</h3>
-                    <p className="opacity-90">
+
+        <Flex
+            direction="column"
+            justify="between"
+            gap="6"
+            py="6"
+        >
+            <Flex align="start" pt="6" pb={"6"} justify={"center"} gap={"150px"} className="border-t-[3px] border-transparent border-t-gradient">
+                <Box>
+                    <Text weight="bold" size="4" mb="2">
+                        Flight Assistant Chatbot
+                    </Text>
+                    <Text as="p" color="gray" highContrast>
                         Polvora no, repolvora
-                    </p>
-                </div>
+                    </Text>
+                </Box>
 
-                <div>
-                    <h4 className="font-bold text-lg mb-2">Navigation</h4>
-                    <ul className="space-y-1">
-                        <li><Link href="/flights" className="hover:text-[var(--color-green)]">Flights</Link></li>
-                        <li><Link href="/bookings" className="hover:text-[var(--color-green)]">My Bookings</Link></li>
-                        <li><Link href="/login" className="hover:text-[var(--color-green)]">Sign In</Link></li>
-                    </ul>
-                </div>
+                <Box>
+                    <Text weight="bold" size="4" mb="2">
+                        Navigation
+                    </Text>
+                    <Flex direction="column" gap="1">
+                        <Link href="/flights" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>Flights</Text>
+                        </Link>
+                        <Link href="/bookings" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>My Bookings</Text>
+                        </Link>
+                        <Link href="/login" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>Sign In</Text>
+                        </Link>
+                    </Flex>
+                </Box>
 
-                <div>
-                    <h4 className="font-bold text-lg mb-2">Follow us</h4>
-                    <ul className="space-y-1">
-                        <li><a href="#" className="hover:text-[var(--color-green)]">Instagram</a></li>
-                        <li><a href="#" className="hover:text-[var(--color-green)]">Facebook</a></li>
-                        <li><a href="#" className="hover:text-[var(--color-green)]">WhatsApp</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div className="text-center py-4 text-xs gradient-text">
-                © {new Date().getFullYear()} Polvora Inc. All rights reserved.
-            </div>
-        </footer>
+                <Box>
+                    <Text weight="bold" size="4" mb="2">
+                        Follow us
+                    </Text>
+                    <Flex direction="column" gap="1">
+                        <a href="#" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>Instagram</Text>
+                        </a>
+                        <a href="#" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>Facebook</Text>
+                        </a>
+                        <a href="#" className="unstyled-link hover:text-[var(--color-green)]">
+                            <Text>WhatsApp</Text>
+                        </a>
+                    </Flex>
+                </Box>
+            </Flex>
+
+            <Flex align={"center"} justify="center">
+                <Text align="center" size="1" className="gradient-text">
+                    © {new Date().getFullYear()} Polvora Inc. All rights reserved.
+                </Text>
+            </Flex>
+        </Flex>
     );
 }

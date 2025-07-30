@@ -1,16 +1,14 @@
 'use client';
 
+import { Flex, Text, Button, Box, DropdownMenu, Avatar } from "@radix-ui/themes";
+import { PersonIcon } from "@radix-ui/react-icons"
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User } from 'lucide-react';
 import { logout } from '@/lib/api/auth';
 
 export default function Header() {
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
   const [user, setUser] = useState<{ name: string } | null>(null);
 
   useEffect(() => {
@@ -38,79 +36,77 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white gradient-border-bottom">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold gradient-text">
-            Flights Chatbot Assistant
-          </Link>
+    <Flex justify="between" align="center" pt="6" pb="6" px="6" className="border-b-[3px] border-transparent border-b-gradient">
+      <Box>
+        <Link href="/" className="gradient-text">
+          <Text size={"5"} weight={"bold"}>Flights Chatbot Assistant</Text>
+        </Link>
+      </Box>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link href="/flights" className="text-gray-900 hover:text-[var(--color-green)]">
-              Flights
-            </Link>
-            <Link
-              href="/bookings"
-              className="text-gray-900 hover:text-[var(--color-green)]"
-            >
-              My Bookings
-            </Link>
-            {user ? (
-              <div className="relative group">
-                <button
-                  className="flex items-center group px-3 py-2 rounded hover:bg-gray-100 transition"
-                  onClick={() => setIsUserDropdownOpen((open) => !open)}
-                  aria-label="Open user menu"
-                >
-                  <User size={24} className="transition-colors text-gray-700 group-hover:text-[var(--color-green)]" />
-                  <span className="ml-2 text-gray-900 font-medium">{user.name}</span>
-                  <svg className="ml-1 w-4 h-4 text-gray-500 group-hover:text-[var(--color-green)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
-                    <button
-                      onClick={() => {
-                        setIsUserDropdownOpen(false);
-                        handleLogout();
-                      }}
-                      className="btn-antiprimary"
-                    >
-                      Log out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative group">
-                <button
-                  className="flex items-center group px-3 py-2 rounded hover:bg-gray-100 transition"
-                  onClick={() => setIsLoginDropdownOpen((open) => !open)}
-                  aria-label="Open login menu"
-                >
-                  <User size={24} className="transition-colors text-gray-700 group-hover:text-[var(--color-green)]" />
-                  <svg className="ml-1 w-4 h-4 text-gray-500 group-hover:text-[var(--color-green)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {isLoginDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
-                    <Link
-                      href="/login"
-                      className="btn-antiprimary"
-                      onClick={() => setIsLoginDropdownOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
-    </header>
+      <Flex justify="between" gap="4" align="center">
+        <Box>
+          <Link href="/flights">
+            <Text className="btn-antiprimary">Flights</Text>
+          </Link>
+        </Box>
+        <Box>
+          <Link href="/bookings">
+            <Text className="btn-antiprimary">My Bookings</Text>
+          </Link>
+        </Box>
+
+        {user ? (
+          <Box>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <Button variant="soft">
+                  <Avatar
+                    src="https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?&w=256&h=256&q=70&crop=focalpoint&fp-x=0.5&fp-y=0.3&fp-z=1&fit=crop"
+                    fallback="A"
+                    size="2"
+                  />
+
+                  <DropdownMenu.TriggerIcon />
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                <DropdownMenu.Item>
+                  <Button
+                    variant="surface"
+                    onClick={() => {
+                      handleLogout();
+                    }}
+                  >
+                    Log out
+                  </Button>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </Box>
+        ) : (
+          <Box>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                <Button variant="soft">
+                  <PersonIcon />
+                  <DropdownMenu.TriggerIcon />
+                </Button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                <DropdownMenu.Item>
+                  <Link
+                    href="/login"
+                  >
+                    <Text>Sign In</Text>
+                  </Link>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </Box>
+        )}
+      </Flex>
+
+
+    </Flex>
   );
 }
