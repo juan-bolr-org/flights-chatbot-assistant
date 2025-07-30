@@ -25,14 +25,13 @@ export default function RegisterSuccessPage() {
             <Flex direction="column" align="center" justify="center" style={{ minHeight: "60vh" }}>
                 <Card size="4" style={{ width: "100%", maxWidth: "400px" }}>
                     <Flex direction="column" gap="4" align="center">
-                        <Heading as="h1" size="6" color="blue">
+                        <Heading as="h1" size="6">
                             Registered successfully!
                         </Heading>
-                        <Text size="3" color="gray">
+                        <Text size="3">
                             Account Created, Yay!
                         </Text>
                         <Button
-                            color="blue"
                             variant="solid"
                             highContrast
                             onClick={() => router.push("/login")}

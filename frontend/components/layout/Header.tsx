@@ -1,10 +1,10 @@
 'use client';
 
-import { Flex, Text, Button, Box, DropdownMenu, Avatar } from "@radix-ui/themes";
-import { PersonIcon } from "@radix-ui/react-icons"
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Flex, Text, Button, Box, DropdownMenu, Avatar } from '@radix-ui/themes';
+import { PersonIcon } from '@radix-ui/react-icons';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/api/auth';
 
 export default function Header() {
@@ -16,10 +16,10 @@ export default function Header() {
       const storedUser = localStorage.getItem('token');
       if (storedUser) {
         try {
-          const parsedUser = { name: "polvora" };
+          const parsedUser = { name: 'polvora' };
           setUser(parsedUser);
         } catch (err) {
-          console.error("Failed to parse user from localStorage:", err);
+          console.error('Failed to parse user from localStorage:', err);
         }
       }
     }
@@ -36,23 +36,31 @@ export default function Header() {
   };
 
   return (
-    <Flex justify="between" align="center" pt="6" pb="6" px="6" className="border-b-[3px] border-transparent border-b-gradient">
+    <Flex
+      justify="between"
+      align="center"
+      pt="6"
+      pb="6"
+      px="6"
+      className="border-b-[3px] border-transparent border-b-gradient"
+    >
       <Box>
-        <Link href="/" className="gradient-text">
-          <Text size={"5"} weight={"bold"}>Flights Chatbot Assistant</Text>
-        </Link>
+        <Text size="5" weight="bold" className="gradient-text" asChild>
+          <Link href="/">Flights Chatbot Assistant</Link>
+        </Text>
       </Box>
 
       <Flex justify="between" gap="4" align="center">
         <Box>
-          <Link href="/flights">
-            <Text className="btn-antiprimary">Flights</Text>
-          </Link>
+          <Button variant="ghost" asChild>
+            <Link href="/flights">Flights</Link>
+          </Button>
         </Box>
+
         <Box>
-          <Link href="/bookings">
-            <Text className="btn-antiprimary">My Bookings</Text>
-          </Link>
+          <Button variant="ghost" asChild>
+            <Link href="/bookings">My Bookings</Link>
+          </Button>
         </Box>
 
         {user ? (
@@ -65,18 +73,12 @@ export default function Header() {
                     fallback="A"
                     size="2"
                   />
-
                   <DropdownMenu.TriggerIcon />
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Item>
-                  <Button
-                    variant="surface"
-                    onClick={() => {
-                      handleLogout();
-                    }}
-                  >
+                  <Button variant="surface" onClick={handleLogout}>
                     Log out
                   </Button>
                 </DropdownMenu.Item>
@@ -93,10 +95,8 @@ export default function Header() {
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
-                <DropdownMenu.Item>
-                  <Link
-                    href="/login"
-                  >
+                <DropdownMenu.Item asChild>
+                  <Link href="/login">
                     <Text>Sign In</Text>
                   </Link>
                 </DropdownMenu.Item>
@@ -105,8 +105,6 @@ export default function Header() {
           </Box>
         )}
       </Flex>
-
-
     </Flex>
   );
 }

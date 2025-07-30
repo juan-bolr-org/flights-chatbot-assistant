@@ -2,6 +2,7 @@
 
 import { Flight } from '@/lib/types/flight';
 import { formatDate } from '@/lib/utils/date';
+import { formatCurrency } from '@/lib/utils/currency';
 import { Calendar, Plane, Share } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -47,31 +48,44 @@ export function FlightCard({ flight }: FlightCardProps) {
             <Box px="4" pt="4">
                 <Flex justify="between" mb="2">
                     <Flex gap="2">
-                        <Badge color="purple" variant="solid" highContrast>
+                        <Badge radius='large' variant="solid" highContrast>
                             Recommended
                         </Badge>
-                        <Badge color="yellow" variant="soft" highContrast>
+                        <Badge radius='large' variant="soft" highContrast>
                             Highlighted
                         </Badge>
                     </Flex>
+                    {flight.status === 'scheduled' ? (
+                        <Badge radius='large' variant="solid" color="green" highContrast>
+                            On Time
+                        </Badge>
+                    ) : (
+                        <Badge radius='large' variant="solid" color="red" highContrast>
+                            Delayed
+                        </Badge>
+                    )}
                 </Flex>
-                <Box style={{ minHeight: 104, maxHeight: 104 }}>
+                <Box style={{ minHeight: 50, maxHeight: 50 }}>
+                    <Heading as="h3" size="4">
+                        From: {flight.origin}
+                    </Heading>
                     <Heading as="h3" size="4">
                         To: {flight.destination}
                     </Heading>
-                    <Text size="2" color="gray">
-                        From: {flight.origin}
-                    </Text>
                 </Box>
             </Box>
 
             {/* Detalles de Vuelo */}
             <Box px="4">
                 <Flex direction="column" gap="3" mt="2">
-                    <Flex gap="2" align="center">
+                    <Flex direction="row" gap="2" align="center">
                         <Calendar className="h-4 w-4 text-gray-500" />
-                        <Text size="2" color="gray">
-                            {formatDate(flight.departure_time)} – {formatDate(flight.arrival_time)}
+                        <Text weight={"bold"} size="2" color="gray">
+                            Departure: <br /> {formatDate(flight.departure_time)}
+                        </Text>
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <Text weight={"bold"} size="2" color="gray">
+                            Arrival: <br /> {formatDate(flight.arrival_time)}
                         </Text>
                     </Flex>
                     <Flex gap="2" align="center">
@@ -82,13 +96,13 @@ export function FlightCard({ flight }: FlightCardProps) {
 
                 {/* Footer */}
                 <Flex justify="between" align="center" mt="4" pt="3" style={{ borderTop: '1px solid #eee' }}>
-                    <Text size="4" weight="medium" color="gray">
-                        {flight.status}
+                    <Text size="2" color="green">
+                       USD ${formatCurrency(flight.price)}
                     </Text>
+
                     <Flex gap="3" align="center">
-                        <Share />
                         <Link href={`/flights/${flight.id}`}>
-                            <Button color="crimson" highContrast>
+                            <Button highContrast>
                                 Purchase
                             </Button>
                         </Link>

@@ -9,7 +9,7 @@ import { FlightCard } from '@/components/flights/FlightCard';
 import { Button } from '@radix-ui/themes';
 import { Text, Flex, Container, Section, Box } from '@radix-ui/themes';
 
-const FLIGHTS_PER_PAGE = 8;
+const FLIGHTS_PER_PAGE = 6;
 
 export default function FlightsPage() {
     const [flights, setFlights] = useState<Flight[]>([]);
@@ -69,9 +69,9 @@ export default function FlightsPage() {
     if (error) {
         return (
             <div className="p-4 text-center">
-                <Text color="red">{error}</Text>
+                <Text>{error}</Text>
                 <div className="mt-4">
-                    <Button onClick={() => window.location.reload()} color="indigo" variant="solid">
+                    <Button onClick={() => window.location.reload()} variant="solid">
                         Try again
                     </Button>
                 </div>
@@ -89,7 +89,7 @@ export default function FlightsPage() {
                     </Text>
                 </Box>
 
-                <Flex wrap={'wrap'} justify="around" align={'start'} gap="4">
+                <Flex wrap={'wrap'} justify="center" align={'start'} gap="4">
                     {paginatedFlights.length > 0 ? (
                         paginatedFlights.map((flight) => (
                             <FlightCard flight={flight} key={flight.id} />
@@ -101,11 +101,11 @@ export default function FlightsPage() {
             </Section>
             <Section py="6">
                 {totalPages > 1 && (
-                    <Flex justify={'around'} align="center" gap="4">
+                    <Flex justify={'center'} align="center" gap="4">
                         <Button onClick={goToPreviousPage} disabled={currentPage === 1} variant="soft">
                             Previous
                         </Button>
-                        <Text color="gray">
+                        <Text>
                             Page {currentPage} of {totalPages}
                         </Text>
                         <Button onClick={goToNextPage} disabled={currentPage === totalPages} variant="soft">

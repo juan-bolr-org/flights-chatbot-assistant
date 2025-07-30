@@ -2,7 +2,7 @@ import "@/styles/global.css";
 import "@radix-ui/themes/styles.css";
 
 import { Theme, Flex, Container } from "@radix-ui/themes";
-
+import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { Inter } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import Header from "@/components/layout/Header";
@@ -28,11 +28,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} text-gray-900`}>
-        <Theme>
+        <Theme appearance="dark">
           <Flex direction="column" justify="between" className="min-h-screen">
             <Header />
             <Container flexGrow={"1"}>{children}</Container>
             <Footer />
+            <FloatingChatButton />
           </Flex>
         </Theme>
       </body>

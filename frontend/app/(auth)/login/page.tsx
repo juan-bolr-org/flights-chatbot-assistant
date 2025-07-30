@@ -82,7 +82,7 @@ export default function LoginPage() {
                 </TextField.Slot>
               </TextField.Root>
               {errors.email && (
-                <Callout.Root color="red">
+                <Callout.Root>
                   <Callout.Text>{errors.email.message}</Callout.Text>
                 </Callout.Root>
               )}
@@ -102,7 +102,7 @@ export default function LoginPage() {
                 </TextField.Slot>
               </TextField.Root>
               {errors.password && (
-                <Callout.Root color="red">
+                <Callout.Root>
                   <Callout.Text>{errors.password.message}</Callout.Text>
                 </Callout.Root>
               )}
@@ -110,7 +110,7 @@ export default function LoginPage() {
 
             {/* Error general */}
             {errors.root?.message && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Text>{errors.root.message}</Callout.Text>
               </Callout.Root>
             )}

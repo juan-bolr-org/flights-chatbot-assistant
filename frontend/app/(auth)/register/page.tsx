@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import { register as apiRegister } from '@/lib/api/auth';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -82,7 +81,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Flex direction="column" gap="4">
             {errors.root && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Icon>
                   <ExclamationTriangleIcon />
                 </Callout.Icon>
@@ -98,7 +97,7 @@ export default function RegisterPage() {
               variant="surface"
             />
             {errors.name && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Text>{errors.name.message}</Callout.Text>
               </Callout.Root>
             )}
@@ -111,7 +110,7 @@ export default function RegisterPage() {
               variant="surface"
             />
             {errors.email && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Text>{errors.email.message}</Callout.Text>
               </Callout.Root>
             )}
@@ -125,7 +124,7 @@ export default function RegisterPage() {
               variant="surface"
             />
             {errors.password && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Text>{errors.password.message}</Callout.Text>
               </Callout.Root>
             )}
@@ -139,7 +138,7 @@ export default function RegisterPage() {
               variant="surface"
             />
             {errors.confirmPassword && (
-              <Callout.Root color="red">
+              <Callout.Root>
                 <Callout.Text>{errors.confirmPassword.message}</Callout.Text>
               </Callout.Root>
             )}

@@ -13,15 +13,15 @@ export default function NotFound() {
       px="4"
       gap="4"
     >
-      <Heading size="9" as="h1" color="gray" highContrast>
+      <Heading size="9" as="h1" highContrast>
         404
       </Heading>
 
-      <Text size="5" color="gray" className="mb-6">
+      <Text size="5" className="mb-6">
         Page not found
       </Text>
 
-      <Button asChild size="3" color="blue" variant="solid">
+      <Button asChild size="3" variant="solid">
         <Link href="/">Back to Home</Link>
       </Button>
     </Flex>
