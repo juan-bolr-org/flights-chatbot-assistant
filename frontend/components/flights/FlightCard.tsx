@@ -3,7 +3,6 @@ import { formatDate } from '@/lib/utils/date'
 import { Calendar, Plane, Share } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { formatCurrency } from '@/lib/utils/currency'
 
 interface FlightCardProps {
     flight: Flight
@@ -28,7 +27,7 @@ export function FlightCard({ flight }: FlightCardProps) {
                                 Recommended
                             </span>
                             <span className="inline-block bg-yellow-400 text-yellow-900 text-xs font-semibold px-2 py-1 rounded-full ml-2">
-                                Highligthed
+                                Highlighted
                             </span>
                         </div>
                     </div>
