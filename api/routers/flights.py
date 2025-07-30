@@ -53,3 +53,11 @@ def create_flight(
     db.commit()
     db.refresh(new_flight)
     return new_flight
+
+@router.get("/list", response_model=List[FlightResponse])
+def list_flights(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    flights = db.query(Flight).all()
+    return flights

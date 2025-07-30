@@ -24,6 +24,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     access_token = create_access_token(data={"sub": new_user.email})
+    # Here we should sent the email if we have enough time :3
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/login", response_model=Token)
