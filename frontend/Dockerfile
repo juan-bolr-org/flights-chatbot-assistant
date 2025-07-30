@@ -4,8 +4,6 @@ FROM node:24.0.2-bookworm
 RUN mkdir /app
 
 COPY package.json /app/package.json
-COPY package-lock.json /app/package-lock.json
-
 # Install dependencies
 RUN cd /app && npm install
 
