@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Autenticación | Flagertour',
-    description: 'Inicia sesión o regístrate en Flagertour',
+    title: 'Sign In - Flight Assistant Chatbot',
+    description: 'Sign in to the Flight Assistant Chatbot',
 }
 
 export default function AuthLayout({
