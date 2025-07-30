@@ -12,21 +12,6 @@ import __main__
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-# Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
-flight_docs_path = Path(__file__).parent.parent.parent.parent / "chatbot" / "flight_docs.pkl"
-with open(flight_docs_path, "rb") as f:
-    flight_splits = pickle.load(f)
-
-vectorstore = InMemoryVectorStore.from_documents(
-    documents=flight_splits, embedding=OpenAIEmbeddings()
-)
-retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
-retriever_tool = create_retriever_tool(
-    retriever,
-    "retrieve_flights",
-    "Recupera información sobre vuelos según la consulta proporcionada",
-)
-response_model = init_chat_model("openai:gpt-4.1", temperature=0)
 
 class ChatRequest(BaseModel):
     content: str
@@ -40,3 +25,28 @@ async def chat_endpoint(request: ChatRequest):
     full_prompt = f'Contexto:\n{docs}\n\nPregunta del usuario: {request.content}'
     response = response_model.invoke(full_prompt).content
     return ChatResponse(response=response)
+
+def init_chat():
+    """Initialize the chat model and retriever tool."""
+    global response_model, retriever_tool
+    try:
+                
+        # Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
+        flight_docs_path = Path(__file__).parent.parent.parent.parent / "chatbot" / "flight_docs.pkl"
+        with open(flight_docs_path, "rb") as f:
+            flight_splits = pickle.load(f)
+
+        vectorstore = InMemoryVectorStore.from_documents(
+            documents=flight_splits, embedding=OpenAIEmbeddings()
+        )
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
+        retriever_tool = create_retriever_tool(
+            retriever,
+            "retrieve_flights",
+            "Recupera información sobre vuelos según la consulta proporcionada",
+        )
+
+        response_model = init_chat_model("openai:gpt-4.1", temperature=0)
+
+    except Exception as e:
+        print(f"Error initializing chat: {e}")

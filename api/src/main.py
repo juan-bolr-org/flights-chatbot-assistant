@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 from db import init_db
 from routers import users_router, flights_router, bookings_router, chat_router
 from utils import init_data
+from routers.chat import init_chat
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     init_data()
+    init_chat()
     yield
 
 app = FastAPI(
