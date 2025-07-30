@@ -97,7 +97,7 @@ export function FlightCard({ flight }: FlightCardProps) {
                 {/* Footer */}
                 <Flex justify="between" align="center" mt="4" pt="3" style={{ borderTop: '1px solid #eee' }}>
                     <Text size="2" color="green">
-                       USD{formatCurrency(flight.price)}
+                        {formatCurrency(flight.price, 'USD')}
                     </Text>
 
                     <Flex gap="3" align="center">
