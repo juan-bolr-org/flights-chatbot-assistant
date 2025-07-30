@@ -24,15 +24,8 @@ export default function FlightsPage() {
         hasFetched.current = true;
 
         const fetchFlights = async () => {
-            const jwt = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-            if (!jwt) {
-                router.push('/login');
-                return;
-            }
-
             try {
-                const response = await getFlights(jwt);
+                const response = await getFlights();
                 setFlights(response);
             } catch (err) {
                 setError("Can't load Flights, please try again later.");
