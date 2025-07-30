@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Colores principales del logo */
+  --color-blue: #3b82f6;
+  /* blue-500 */
+  --color-green: #22c55e;
+  /* green-500 */
+  --color-yellow: #eab308;
+  /* yellow-500 */
+  --color-red: #ef4444;
+  /* red-500 */
+  --color-purple: #a855f7;
+  /* purple-500 */
+  --color-pink: #ec4899;
+  /* pink-500 */
+
+  /* Variantes más claras */
+  --color-blue-light: #60a5fa;
+  /* blue-400 */
+  --color-green-light: #4ade80;
+  /* green-400 */
+  --color-yellow-light: #facc15;
+  /* yellow-400 */
+  --color-red-light: #f87171;
+  /* red-400 */
+  --color-purple-light: #c084fc;
+  /* purple-400 */
+  --color-pink-light: #f472b6;
+  /* pink-400 */
+
+  /* Variantes más oscuras */
+  --color-blue-dark: #2563eb;
+  /* blue-600 */
+  --color-green-dark: #16a34a;
+  /* green-600 */
+  --color-yellow-dark: #ca8a04;
+  /* yellow-600 */
+  --color-red-dark: #dc2626;
+  /* red-600 */
+  --color-purple-dark: #9333ea;
+  /* purple-600 */
+  --color-pink-dark: #db2777;
+  /* pink-600 */
+}
+
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold;
+  }
+
+  h1 {
+    @apply text-4xl;
+  }
+
+  h2 {
+    @apply text-3xl;
+  }
+
+  h3 {
+    @apply text-2xl;
+  }
+
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-[var(--color-red)] text-white hover:bg-[var(--color-red-dark)]
+  }
+
+  .btn-antiprimary {
+    @apply block w-full text-left px-4 py-2 text-gray-900 hover:bg-[var(--color-red)] hover:text-white transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-[var(--color-green)] text-white hover:bg-[var(--color-green-dark)];
+  }
+
+  .btn-danger {
+    @apply bg-[var(--color-red)] text-white hover:bg-[var(--color-red-dark)];
+  }
+
+  .btn-warning {
+    @apply bg-[var(--color-yellow)] text-white hover:bg-[var(--color-yellow-dark)];
+  }
+
+  .btn-success {
+    @apply bg-[var(--color-green)] text-white hover:bg-[var(--color-green-dark)];
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-red)] focus:border-transparent;
+  }
+
+  .select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-red)] focus:border-transparent;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[var(--color-red)] via-[var(--color-green)] to-[var(--color-blue)];
+  }
+
+  .gradient-border {
+    @apply relative;
+    background: linear-gradient(white, white) padding-box,
+      linear-gradient(to right, var(--color-red), var(--color-green), var(--color-blue)) border-box;
+    border: 2px solid transparent;
+  }
+
+  .gradient-border-bottom {
+    @apply relative;
+    background: linear-gradient(white, white) padding-box,
+      linear-gradient(to right, var(--color-red), var(--color-green), var(--color-blue)) border-box;
+    border-bottom: 2px solid transparent;
+  }
+
+  .gradient-border-top {
+    @apply relative;
+    background: linear-gradient(white, white) padding-box,
+      linear-gradient(to right, var(--color-red), var(--color-green), var(--color-blue)) border-box;
+    border-top: 2px solid transparent;
+  }
+
+}
+
+/* Animaciones */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+/* Estilos específicos para componentes */
+.header-gradient {
+  background: linear-gradient(to right,
+      var(--color-blue),
+      var(--color-green),
+      var(--color-yellow),
+      var(--color-red),
+      var(--color-purple),
+      var(--color-pink));
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+.footer-gradient {
+  background: linear-gradient(to right,
+      var(--color-blue-dark),
+      var(--color-green-dark),
+      var(--color-yellow-dark),
+      var(--color-red-dark),
+      var(--color-purple-dark),
+      var(--color-pink-dark));
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
