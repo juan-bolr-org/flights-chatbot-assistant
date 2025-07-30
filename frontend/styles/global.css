@@ -35,7 +35,7 @@ body {
 
 a {
   all: unset;
-  /* Reinicia todos los estilos heredados por defecto */
+  /* Resets all inherited default styles */
   cursor: pointer;
   /* Asegura que se mantenga el cursor de enlace */
 }
