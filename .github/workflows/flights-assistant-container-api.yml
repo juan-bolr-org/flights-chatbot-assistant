@@ -1,0 +1,54 @@
+name: Build and Push Docker Image to ACR
+
+on:
+  push:
+    branches:
+      - main  # o la rama que estés usando
+    paths:
+      - 'api/**'  # Solo se activa si hay cambios en el directorio backend
+      - .github/workflows/flights-assistant-container-api.yml  # Asegúrate de que el workflow se active con cambios en este archivo
+
+permissions:
+      id-token: write
+      contents: read      
+
+env:
+  IMAGE_NAME: flights-api  # Nombre de la imagen (sin el registro)
+  WEBAPP_NAME: flights-assistant-container  # Nombre de la aplicación web en Azure
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: grupo4acr.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: api
+          push: true
+          tags: grupo4acr.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.WEBAPP_NAME }}
+          slot-name: production
+          images: grupo4acr.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
