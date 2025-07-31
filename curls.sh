@@ -14,13 +14,13 @@ curl -X POST "http://localhost:8000/users/register" \
 # Login as user1 and store token
 export TOKEN1=$(curl -s -X POST "http://localhost:8000/users/login" \
   -H "Content-Type: application/json" \
-  -d '{"email": "alice1@example.com", "password": "alicepass"}' | jq -r .access_token)
+  -d '{"email": "alice1@example.com", "password": "alicepass"}' | jq -r .token.access_token)
 echo "User1 token: $TOKEN1"
 
 # Login as user2 and store token
 export TOKEN2=$(curl -s -X POST "http://localhost:8000/users/login" \
   -H "Content-Type: application/json" \
-  -d '{"email": "bob1@example.com", "password": "bobpass"}' | jq -r .access_token)
+  -d '{"email": "bob1@example.com", "password": "bobpass"}' | jq -r .token.access_token)
 echo "User2 token: $TOKEN2"
 
 # Create random flights (as user1)
