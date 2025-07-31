@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, Button, IconButton, Flex } from '@radix-ui/themes';
+import { Dialog, IconButton, Flex } from '@radix-ui/themes';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { ChatPanel } from './ChatPanel';
 

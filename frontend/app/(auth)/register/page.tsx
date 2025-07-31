@@ -58,7 +58,7 @@ export default function RegisterPage() {
         localStorage.setItem('registerSuccess', 'true');
         router.push('/register/success');
       } else {
-        setError('root', { message: response.error || 'Could not register the account' });
+        setError('root', { message: typeof response === 'object' && response.error ? response.error : 'Could not register the account' });
       }
     } catch (err) {
       setError('root', { message: err instanceof Error ? err.message : 'Unknown registration error' });

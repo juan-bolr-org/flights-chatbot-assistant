@@ -27,7 +27,7 @@ export default function FlightsPage() {
             try {
                 const response = await getFlights();
                 setFlights(response);
-            } catch (err) {
+            } catch {
                 setError("Can't load Flights, please try again later.");
             } finally {
                 setIsLoading(false);
@@ -77,7 +77,7 @@ export default function FlightsPage() {
             <Section>
 
                 <Box pb="6">
-                    <Text size="6" weight="bold" py="3">
+                    <Text size="6" weight="bold">
                         All Flights
                     </Text>
                 </Box>

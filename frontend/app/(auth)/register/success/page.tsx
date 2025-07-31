@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Container, Heading, Text, Button, Flex, Card } from "@radix-ui/themes";
+import { Container, Heading, Text, Button, Flex, Card } from "@radix-ui/themes";
 
 export default function RegisterSuccessPage() {
     const router = useRouter();

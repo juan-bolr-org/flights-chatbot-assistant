@@ -26,7 +26,7 @@ export function ChatPanel() {
             const botResponse = await sendChatMessage(userMessage.content);
             const botMessage: Message = { role: 'bot', content: botResponse };
             setMessages((prev) => [...prev, botMessage]);
-        } catch (err) {
+        } catch {
             setMessages((prev) => [
                 ...prev,
                 { role: 'bot', content: 'Error on server.' },
