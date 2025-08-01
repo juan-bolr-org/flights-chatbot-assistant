@@ -1,11 +1,11 @@
 // lib/api/chat.ts
 
-const API_URL = process.env.API_ENV || 'http://localhost:3000';
+const API_URL = '/api';
 
 export async function sendChatMessage(query: string): Promise<string> {
   const jwt = localStorage.getItem("token");
 
-  const res = await fetch(`${API_URL}/api/chat`, {
+  const res = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

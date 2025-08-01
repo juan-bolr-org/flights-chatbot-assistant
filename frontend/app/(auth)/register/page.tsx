@@ -54,11 +54,12 @@ export default function RegisterPage() {
       });
 
       if (response) {
-        localStorage.setItem('token', response.token.access_token);
+        console.log(response);
+        localStorage.setItem('token', response.access_token);
         localStorage.setItem('registerSuccess', 'true');
         router.push('/register/success');
       } else {
-        setError('root', { message: typeof response === 'object' && response.error ? response.error : 'Could not register the account' });
+        setError('root', { message: typeof response || 'Could not register the account' });
       }
     } catch (err) {
       setError('root', { message: err instanceof Error ? err.message : 'Unknown registration error' });

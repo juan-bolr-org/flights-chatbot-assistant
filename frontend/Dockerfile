@@ -12,15 +12,16 @@ COPY . /app
 
 WORKDIR /app
 
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV API_URL="http://192.168.1.2:8000"
+
 # Build the application
 RUN npm run build
 
-# Set environment variables
-ENV NODE_ENV production
-ENV PORT 3000
+# Expose the port the app runs on
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]
-
-# Expose the port the app runs on
-EXPOSE 3000
