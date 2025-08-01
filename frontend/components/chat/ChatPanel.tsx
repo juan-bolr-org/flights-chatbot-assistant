@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, TextArea, Button, ScrollArea, Text, Flex } from '@radix-ui/themes';
+import {
+    Box,
+    TextArea,
+    Button,
+    ScrollArea,
+    Text,
+    Flex,
+} from '@radix-ui/themes';
+import { ExitIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
 import { sendChatMessage } from '@/lib/api/chat';
 
 type Message = {
@@ -9,7 +17,7 @@ type Message = {
     content: string;
 };
 
-export function ChatPanel() {
+export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -35,13 +43,25 @@ export function ChatPanel() {
             setLoading(false);
         }
     };
-
+    if (!open) return null;
     return (
-        <Flex direction="column" flexGrow="1" justify="between" mt="4">
+
+        <Flex direction="column" flexGrow="1" justify="between" mt="4" className="openChat">
+            <Flex direction="row" justify="between" align="center" mb="4">
+                <Text size="3" weight="bold">Chat</Text>
+                <Button
+                    variant="ghost"
+                    size="2"
+                    onClick={() => onOpenChange(false)}
+                    style={{ alignSelf: 'flex-end' }}
+                >
+                    <ExitIcon />
+                </Button>
+            </Flex>
             <ScrollArea
                 type="always"
                 scrollbars="vertical"
-                style={{ height: '100%', maxHeight: '250px' }}
+                style={{ height: '100%', maxHeight: '100%' }}
             >
                 <Flex direction="column" gap="2">
                     {messages.map((msg, idx) => (
@@ -70,7 +90,7 @@ export function ChatPanel() {
                     style={{ flex: 1 }}
                 />
                 <Button size="2" onClick={handleSend} disabled={loading}>
-                    {loading ? '...' : 'Send'}
+                    {loading ? '...' : <PaperPlaneIcon />}
                 </Button>
             </Flex>
         </Flex>

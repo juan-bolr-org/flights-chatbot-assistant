@@ -40,6 +40,16 @@ a {
   /* Ensures the link cursor is maintained */
 }
 
+.openChat {
+  width: 420px;
+  height: 520px;
+  position: relative;
+  bottom: 3rem;
+  background-color: #1a1a1aff;
+  border-radius: 20px;
+  padding: 16px;
+}
+
 h1,
 h2,
 h3,
