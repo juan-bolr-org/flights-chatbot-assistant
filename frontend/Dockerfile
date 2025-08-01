@@ -3,6 +3,8 @@ FROM node:24.0.2-bookworm
 # Set the working directory
 RUN mkdir /app
 
+ARG API_URL
+
 COPY package.json /app/package.json
 # Install dependencies
 RUN cd /app && npm install
@@ -15,7 +17,6 @@ WORKDIR /app
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV API_URL="http://192.168.1.2:8000"
 
 # Build the application
 RUN npm run build

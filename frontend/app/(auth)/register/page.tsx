@@ -54,7 +54,6 @@ export default function RegisterPage() {
       });
 
       if (response) {
-        console.log(response);
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('registerSuccess', 'true');
         router.push('/register/success');

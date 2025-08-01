@@ -13,6 +13,8 @@ services:
   front:
     build:
       context: ./frontend
+      args:
+      - API_URL=http://api:8000
     environment:
       - PORT=3000
       - API_URL=http://api:8000
