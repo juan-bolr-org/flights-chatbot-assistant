@@ -11,7 +11,7 @@ export async function sendChatMessage(query: string): Promise<string> {
       "Content-Type": "application/json",
       ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
     },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ "content": query }),
   });
 
   if (!res.ok) {

@@ -9,3 +9,4 @@ faker
 langchain
 langchain_core
 langchain-openai
+numpy

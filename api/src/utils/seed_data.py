@@ -60,11 +60,29 @@ def create_fake_bookings(db, users, flights, n=30):
             db.add(booking)
     db.commit()
 
+def create_default_user(db):
+    from sqlalchemy.exc import IntegrityError
+    user = User(
+        name="default@default.com",
+        email="default@default.com",
+        password_hash=get_password_hash("default@default.com"),
+        phone="000-000-0000"
+    )
+    db.add(user)
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        user = db.query(User).filter_by(email="default@default.com").first()
+    return user
+
 def init_data():
     from faker import Faker
     fake = Faker()
     db: Session = SessionLocal()
     try:
+        create_default_user(db)
         users = create_fake_users(db, fake, 10)
         flights = create_fake_flights(db, fake, 20)
         create_fake_bookings(db, users, flights, 30)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import pickle
 from pathlib import Path
@@ -19,20 +19,26 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-@router.post("/", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
-    docs = retriever_tool.invoke({"query": request.content})
-    full_prompt = f'Contexto:\n{docs}\n\nPregunta del usuario: {request.content}'
-    response = response_model.invoke(full_prompt).content
-    return ChatResponse(response=response)
+response_model, retriever_tool = None, None
+
+@router.post("", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest, _ = Depends(get_current_user)):
+    try:
+        docs = retriever_tool.invoke({"query": request.content})
+        full_prompt = f'Contexto:\n{docs}\n\nPregunta del usuario: {request.content}'
+        response = response_model.invoke(full_prompt).content
+        return ChatResponse(response=response)
+    except Exception as e:
+        print(f"Error processing chat request: {e}")
+        raise HTTPException(status_code=500, detail=f"Error processing chat request: {str(e)}")
 
 def init_chat():
     """Initialize the chat model and retriever tool."""
     global response_model, retriever_tool
-    try:
-                
+    print("Initializing chat model and retriever tool...")
+    try:   
         # Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
-        flight_docs_path = Path(__file__).parent.parent.parent.parent / "chatbot" / "flight_docs.pkl"
+        flight_docs_path = Path(__file__).parent.parent.parent / "flight_docs.pkl"
         with open(flight_docs_path, "rb") as f:
             flight_splits = pickle.load(f)
 
