@@ -1,49 +1,54 @@
-name: Deploy frontend to Azure Storage
+name: Frontend Build/Push Docker Image and Deploy to Azure Web App
 
 on:
   push:
     branches:
       - main  # o la rama que estés usando
     paths:
-      - 'web/**'  # Solo se activa si hay cambios en el directorio frontend
+      - 'frontend/**'  # Solo se activa si hay cambios en el directorio backend
       - .github/workflows/flights-assistant-frontend.yml  # Asegúrate de que el workflow se active con cambios en este archivo
 
 permissions:
       id-token: write
       contents: read      
 
+env:
+  IMAGE_NAME: flights-frontend  # Nombre de la imagen (sin el registro)
+  WEBAPP_NAME: flights-assistant-frontend  # Nombre de la aplicación web en Azure
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: azure/login@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: 24
+          registry: grupo4acr.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: frontend
-
-      - name: Build site
-        run: npm run build
-        working-directory: frontend
-
-      - name: Upload to Azure Static Website
-        uses: azure/cli@v1
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
-          azcliversion: 2.30.0
-          inlineScript: |
-            az storage blob upload-batch \
-              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT }} \
-              --destination \$web \
-              --source frontend/dist \
-              --auth-mode key \
-              --account-key ${{ secrets.AZURE_STORAGE_KEY }}
+          context: frontend
+          push: true
+          tags: grupo4acr.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.WEBAPP_NAME }}
+          slot-name: production
+          images: grupo4acr.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
