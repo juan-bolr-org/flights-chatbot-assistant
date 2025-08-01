@@ -16,6 +16,7 @@ import {
   Text,
 } from '@radix-ui/themes';
 import { EnvelopeClosedIcon, LockClosedIcon } from '@radix-ui/react-icons';
+import { useUser } from '@/contexts/UserContext';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email' }),
@@ -27,7 +28,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
+  const { setUser } = useUser();
   const {
     register,
     handleSubmit,
@@ -47,9 +48,10 @@ export default function LoginPage() {
     clearErrors();
     try {
       const result = await login({ email: data.email, password: data.password });
-      
+
       if (result) {
         localStorage.setItem('token', result.token.access_token);
+        setUser({ name: result.name });
         router.push('/');
       } else {
         setError('root', { message: 'Invalid credentials. Please try again.' });

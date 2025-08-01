@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     TextArea,
@@ -8,9 +8,11 @@ import {
     ScrollArea,
     Text,
     Flex,
+    Callout,
 } from '@radix-ui/themes';
 import { ExitIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
 import { sendChatMessage } from '@/lib/api/chat';
+import { AlertCircleIcon } from 'lucide-react';
 
 type Message = {
     role: 'user' | 'bot';
@@ -20,9 +22,13 @@ type Message = {
 export function ChatPanel({
     open,
     onOpenChange,
+    messageCount,
+    setMessageCount,
 }: {
     open: boolean;
+    messageCount: number;
     onOpenChange: (open: boolean) => void;
+    setMessageCount: (count: number) => void;
 }) {
     const [messages, setMessages] = useState<Message[]>([
         { role: 'bot', content: 'Hello! How can I assist you today?' },
@@ -30,6 +36,19 @@ export function ChatPanel({
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            setMessageCount(0);
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (messages[messages.length - 1].role === 'bot' && !open) {
+            setMessageCount(messageCount + 1);
+        }
+
+    }, [messages]);
 
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -42,6 +61,7 @@ export function ChatPanel({
         try {
             const botResponse = await sendChatMessage(userMessage.content);
             const botMessage: Message = { role: 'bot', content: botResponse };
+            setMessageCount(messageCount + 1);
             setMessages((prev) => [...prev, botMessage]);
         } catch {
             setMessages((prev) => [
@@ -92,17 +112,30 @@ export function ChatPanel({
                 </Flex>
             </ScrollArea>
 
-            <Flex mt="3" gap="2" align="center">
-                <TextArea
-                    placeholder="Write your message..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    style={{ flex: 1 }}
-                />
-                <Button size="2" onClick={handleSend} disabled={loading}>
-                    {loading ? '...' : <PaperPlaneIcon />}
-                </Button>
-            </Flex>
+
+            {localStorage.getItem('token') ? (
+                <Flex mt="3" gap="2" align="center">
+                    <TextArea
+                        placeholder="Write your message..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        style={{ flex: 1 }}
+                    />
+                    <Button size="2" onClick={handleSend} disabled={loading}>
+                        {loading ? '...' : <PaperPlaneIcon />}
+                    </Button>
+                </Flex>
+            ) : (
+                <Callout.Root color="orange">
+                    <Callout.Icon>
+                        <AlertCircleIcon />
+                    </Callout.Icon>
+                    <Callout.Text>
+                        Please log in to send messages.
+                    </Callout.Text>
+                </Callout.Root>
+            )}
+
         </Flex>
     );
 }

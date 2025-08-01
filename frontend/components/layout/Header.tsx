@@ -3,27 +3,13 @@
 import { Flex, Text, Button, Box, DropdownMenu, Avatar } from '@radix-ui/themes';
 import { PersonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/api/auth';
+import { useUser } from '@/contexts/UserContext';
 
 export default function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string } | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('token');
-      if (storedUser) {
-        try {
-          const parsedUser = { name: 'polvora' };
-          setUser(parsedUser);
-        } catch (err) {
-          console.error('Failed to parse user from localStorage:', err);
-        }
-      }
-    }
-  }, []);
+  const { user, setUser } = useUser();
 
   const handleLogout = async () => {
     try {
