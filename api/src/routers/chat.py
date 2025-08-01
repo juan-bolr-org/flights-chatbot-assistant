@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 import pickle
 from pathlib import Path
+from utils import get_current_user
 
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
@@ -20,7 +21,7 @@ class ChatResponse(BaseModel):
     response: str
 
 @router.post("/", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
+async def chat_endpoint(request: ChatRequest, _ = Depends(get_current_user)):
     docs = retriever_tool.invoke({"query": request.content})
     full_prompt = f'Contexto:\n{docs}\n\nPregunta del usuario: {request.content}'
     response = response_model.invoke(full_prompt).content
