@@ -1,11 +1,11 @@
-import { AuthResponse, RegisterData, User } from '../types/user';
+import { AuthResponse, Token, RegisterData, User } from '../types/user';
 
-const API_URL = process.env.API_ENV || 'http://localhost:3000';
+const API_URL = '/api';
 
 // Register a new user
-export async function register(data: RegisterData): Promise<AuthResponse> {
+export async function register(data: RegisterData): Promise<Token> {
     try {
-        const res = await fetch(`${API_URL}/api/users/register`, {
+        const res = await fetch(`${API_URL}/users/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -35,7 +35,7 @@ export async function login({
     password: string;
 }): Promise<AuthResponse> {
     try {
-        const res = await fetch(`${API_URL}/api/users/login`, {
+        const res = await fetch(`${API_URL}/users/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -67,7 +67,7 @@ export async function getCurrentUser(): Promise<User> {
             throw new Error('No token available');
         }
 
-        const res = await fetch(`${API_URL}/api/users/me`, {
+        const res = await fetch(`${API_URL}/users/me`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

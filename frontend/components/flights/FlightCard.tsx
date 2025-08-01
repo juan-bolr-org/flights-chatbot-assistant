@@ -3,7 +3,7 @@
 import { Flight } from '@/lib/types/flight';
 import { formatDate } from '@/lib/utils/date';
 import { formatCurrency } from '@/lib/utils/currency';
-import { Calendar, Plane, Share } from 'lucide-react';
+import { Calendar, Plane } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {

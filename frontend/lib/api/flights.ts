@@ -1,6 +1,6 @@
 import { Flight, FlightsResponse } from '../types/flight';
 
-const API_URL = process.env.API_URL || 'http://localhost:3000';
+const API_URL = '/api';
 
 function sanitizeId(id: string | number): string {
     if (!/^\d+$/.test(String(id))) throw new Error('Invalid ID');
@@ -8,7 +8,7 @@ function sanitizeId(id: string | number): string {
 }
 
 export async function getFlights(): Promise<FlightsResponse> {
-    const response = await fetch(`${API_URL}/api/flights/list`, {
+    const response = await fetch(`${API_URL}/flights/list`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export async function getFlights(): Promise<FlightsResponse> {
 
 // Get flight details by ID
 export async function getFlightById(id: string): Promise<Flight> {
-    const response = await fetch(`${API_URL}/api/flights/${id}`, {
+    const response = await fetch(`${API_URL}/flights/${id}`, {
         cache: 'no-store',
     });
 
@@ -39,7 +39,7 @@ export async function getFlightById(id: string): Promise<Flight> {
 // Create a new flight
 export async function createFlight(flight: Omit<Flight, 'id'>): Promise<Flight> {
     try {
-        const res = await fetch(`${API_URL}/api/flights`, {
+        const res = await fetch(`${API_URL}/flights`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(flight),
@@ -64,7 +64,7 @@ export async function updateFlight(id: string | number, flight: Partial<Flight>)
     const safeId = sanitizeId(id);
 
     try {
-        const res = await fetch(`${API_URL}/api/flights/${safeId}`, {
+        const res = await fetch(`${API_URL}/flights/${safeId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(flight),
@@ -89,7 +89,7 @@ export async function deleteFlight(id: string | number): Promise<void> {
     const safeId = sanitizeId(id);
 
     try {
-        const res = await fetch(`${API_URL}/api/flights/${safeId}`, {
+        const res = await fetch(`${API_URL}/flights/${safeId}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
         });
