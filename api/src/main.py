@@ -28,4 +28,4 @@ app.include_router(chat_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Flights Chatbot Assistant API"}
+    return {"message": "Welcome to the Flights Chatbot Assistant API v2"}

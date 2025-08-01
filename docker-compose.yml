@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: ./api
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  front:
+    build:
+      context: ./frontend
+    environment:
+      - PORT=3000
+      - API_URL=http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped

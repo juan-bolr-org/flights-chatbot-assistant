@@ -1,4 +1,4 @@
-name: Build and Push Docker Image to ACR
+name: Build/Push Docker Image and Deploy to Azure Web App
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 env:
   IMAGE_NAME: flights-api  # Nombre de la imagen (sin el registro)
-  WEBAPP_NAME: flights-assistant-container  # Nombre de la aplicación web en Azure
+  WEBAPP_NAME: flights-assistant-api  # Nombre de la aplicación web en Azure
 
 jobs:
   build-and-deploy:
