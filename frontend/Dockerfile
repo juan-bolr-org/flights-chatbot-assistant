@@ -3,7 +3,7 @@ FROM node:24.0.2-bookworm
 # Set the working directory
 RUN mkdir /app
 
-ARG API_URL
+ARG API_URL=https://flights-assistant-api-aqcmh5h0e0acgnbg.westus-01.azurewebsites.net
 
 COPY package.json /app/package.json
 # Install dependencies
