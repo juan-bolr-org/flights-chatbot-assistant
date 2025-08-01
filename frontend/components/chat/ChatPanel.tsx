@@ -17,8 +17,17 @@ type Message = {
     content: string;
 };
 
-export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-    const [messages, setMessages] = useState<Message[]>([]);
+export function ChatPanel({
+    open,
+    onOpenChange,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const [messages, setMessages] = useState<Message[]>([
+        { role: 'bot', content: 'Hello! How can I assist you today?' },
+        { role: 'bot', content: 'Feel free to ask me anything about your flight.' },
+    ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -43,21 +52,22 @@ export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
             setLoading(false);
         }
     };
-    if (!open) return null;
-    return (
 
+    if (!open) return null;
+
+    return (
         <Flex direction="column" flexGrow="1" justify="between" mt="4" className="openChat">
             <Flex direction="row" justify="between" align="center" mb="4">
-                <Text size="3" weight="bold">Chat</Text>
+                <Text size="3" weight="bold">Flight Assistant Chatbot</Text>
                 <Button
                     variant="ghost"
                     size="2"
                     onClick={() => onOpenChange(false)}
-                    style={{ alignSelf: 'flex-end' }}
                 >
                     <ExitIcon />
                 </Button>
             </Flex>
+
             <ScrollArea
                 type="always"
                 scrollbars="vertical"
@@ -70,7 +80,7 @@ export function ChatPanel({ open, onOpenChange }: { open: boolean; onOpenChange:
                             p="3"
                             m="3"
                             style={{
-                                backgroundColor: msg.role === 'user' ? '#292727ff' : '#383838ff',
+                                backgroundColor: msg.role === 'user' ? '#292727' : '#383838',
                                 borderRadius: 6,
                                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                                 maxWidth: '80%',
