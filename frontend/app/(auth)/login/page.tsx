@@ -27,7 +27,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const { user, setUser } = useUser();
   const {
     register,
@@ -40,7 +39,7 @@ export default function LoginPage() {
   });
 
   if (user?.token) {
-    router.replace('/');
+    router.push('/');
     return null;
   }
 
@@ -51,6 +50,7 @@ export default function LoginPage() {
 
       if (result) {
         if (result.token && result.token.access_token) {
+          localStorage.setItem('token', result.token.access_token);
           setUser({ name: result.name, email: result.email, id: result.id, token: result.token });
           router.push('/');
         } else {
