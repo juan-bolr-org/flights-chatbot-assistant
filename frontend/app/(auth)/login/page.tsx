@@ -16,7 +16,7 @@ import {
   Text,
 } from '@radix-ui/themes';
 import { EnvelopeClosedIcon, LockClosedIcon } from '@radix-ui/react-icons';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/context/UserContext';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email' }),
@@ -28,7 +28,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const { setUser } = useUser();
+  const { user, setUser } = useUser();
   const {
     register,
     handleSubmit,
@@ -39,7 +39,7 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  if (token) {
+  if (user?.token) {
     router.replace('/');
     return null;
   }
@@ -50,9 +50,12 @@ export default function LoginPage() {
       const result = await login({ email: data.email, password: data.password });
 
       if (result) {
-        localStorage.setItem('token', result.token.access_token);
-        setUser({ name: result.name });
-        router.push('/');
+        if (result.token && result.token.access_token) {
+          setUser({ name: result.name, email: result.email, id: result.id, token: result.token });
+          router.push('/');
+        } else {
+          setError('root', { message: 'Invalid credentials. Please try again.' });
+        }
       } else {
         setError('root', { message: 'Invalid credentials. Please try again.' });
       }

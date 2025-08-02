@@ -42,7 +42,6 @@ export async function login({
         });
 
         const response = await res.json();
-        console.log('Login response:', response);
 
         if (!response) {
             throw new Error('Unexpected server response');

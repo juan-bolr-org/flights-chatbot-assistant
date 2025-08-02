@@ -9,9 +9,7 @@ export interface User {
     id: number
     email: string
     name: string
-    phone: string
-    token: Token
-    created_at: string
+    token?: Token
 }
 
 export interface UserResponse {

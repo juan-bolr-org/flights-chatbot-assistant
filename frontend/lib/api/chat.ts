@@ -2,14 +2,13 @@
 
 const API_URL = '/api';
 
-export async function sendChatMessage(query: string): Promise<string> {
-  const jwt = localStorage.getItem("token");
+export async function sendChatMessage(token: string, query: string): Promise<string> {
 
   const res = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ "content": query }),
   });
