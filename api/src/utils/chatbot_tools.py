@@ -1,12 +1,15 @@
-import json
-import os
-from typing import Optional, Any, Dict, List
+import pickle
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field
 
 import httpx
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import AsyncCallbackManagerForToolRun
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.tools.retriever import create_retriever_tool
 
 
 # Pydantic models for tool arguments
@@ -43,9 +46,9 @@ class FlightSearchTool(BaseTool):
     args_schema: type[BaseModel] = FlightSearchArgs
     return_direct: bool = False
     user_token: str
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
-    def __init__(self, user_token: str, api_base_url: str = "http://localhost:8000", **kwargs):
+    def __init__(self, user_token: str, api_base_url: str, **kwargs):
         super().__init__(user_token=user_token, api_base_url=api_base_url, **kwargs)
 
     async def _arun(
@@ -113,9 +116,9 @@ class ListFlightsTool(BaseTool):
     )
     return_direct: bool = False
     user_token: str
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
-    def __init__(self, user_token: str, api_base_url: str = "http://localhost:8000", **kwargs):
+    def __init__(self, user_token: str, api_base_url: str, **kwargs):
         super().__init__(user_token=user_token, api_base_url=api_base_url, **kwargs)
 
     async def _arun(
@@ -171,9 +174,9 @@ class CreateBookingTool(BaseTool):
     args_schema: type[BaseModel] = BookingCreateArgs
     return_direct: bool = False
     user_token: str
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
-    def __init__(self, user_token: str, api_base_url: str = "http://localhost:8000", **kwargs):
+    def __init__(self, user_token: str, api_base_url: str, **kwargs):
         super().__init__(user_token=user_token, api_base_url=api_base_url, **kwargs)
 
     async def _arun(
@@ -233,9 +236,9 @@ class GetUserBookingsTool(BaseTool):
     return_direct: bool = False
     user_token: str
     user_id: int
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
-    def __init__(self, user_token: str, user_id: int, api_base_url: str = "http://localhost:8000", **kwargs):
+    def __init__(self, user_token: str, user_id: int, api_base_url: str, **kwargs):
         super().__init__(user_token=user_token, user_id=user_id, api_base_url=api_base_url, **kwargs)
 
     async def _arun(
@@ -311,9 +314,9 @@ class CancelBookingTool(BaseTool):
     args_schema: type[BaseModel] = BookingUpdateArgs
     return_direct: bool = False
     user_token: str
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
-    def __init__(self, user_token: str, api_base_url: str = "http://localhost:8000", **kwargs):
+    def __init__(self, user_token: str, api_base_url: str, **kwargs):
         super().__init__(user_token=user_token, api_base_url=api_base_url, **kwargs)
 
     async def _arun(
@@ -360,7 +363,7 @@ class CancelBookingTool(BaseTool):
         raise NotImplementedError("This tool only supports async execution")
 
 
-def create_chatbot_tools(user_token: str, user_id: int, api_base_url: str = "http://localhost:8000") -> List[BaseTool]:
+def create_chatbot_tools(user_token: str, user_id: int, api_base_url: str) -> List[BaseTool]:
     """Create and return a list of chatbot tools for the given user."""
     return [
         FlightSearchTool(user_token=user_token, api_base_url=api_base_url),
@@ -369,3 +372,56 @@ def create_chatbot_tools(user_token: str, user_id: int, api_base_url: str = "htt
         GetUserBookingsTool(user_token=user_token, user_id=user_id, api_base_url=api_base_url),
         CancelBookingTool(user_token=user_token, api_base_url=api_base_url),
     ]
+
+
+def create_retriever_tool_from_docs(flight_docs_path: str):
+    """Create and return a retriever tool from flight documents."""
+    try:
+        with open(flight_docs_path, "rb") as f:
+            flight_splits = pickle.load(f)
+
+        vectorstore = InMemoryVectorStore.from_documents(
+            documents=flight_splits, embedding=OpenAIEmbeddings()
+        )
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
+
+        retriever_tool = create_retriever_tool(
+            retriever,
+            "flight_faqs",
+            "Search through flight documentation and FAQ information. Use this for general flight policies, procedures, baggage rules, check-in information, and other flight-related documentation that users might ask about.",
+        )
+        
+        return retriever_tool
+    except Exception as e:
+        print(f"Error creating retriever tool: {e}")
+        return None
+
+
+def create_faqs_retriever_tool():
+    """Create and return a retriever tool for airline FAQs."""
+    faqs = [
+        "What is the baggage allowance for domestic flights? Each passenger is allowed one checked bag up to 23kg and one carry-on bag up to 8kg.",
+        "How early should I arrive at the airport before my flight? It is recommended to arrive at least 2 hours before domestic flights and 3 hours before international flights.",
+        "Can I change my flight after booking? Yes, you can change your flight up to 24 hours before departure, subject to availability and fare difference.",
+        "What items are prohibited in carry-on luggage? Prohibited items include liquids over 100ml, sharp objects, and flammable materials.",
+        "How do I check in online? Visit our website or mobile app, enter your booking reference, and follow the instructions to check in online.",
+        "What should I do if my flight is delayed or cancelled? You will be notified via email or SMS. You can rebook or request a refund through our customer service.",
+        "Are pets allowed on board? Small pets are allowed in the cabin with prior reservation. Larger pets must travel in the cargo hold.",
+        "Do you offer special assistance for passengers with reduced mobility? Yes, please contact our support team at least 48 hours before your flight to arrange assistance.",
+        "Can I select my seat in advance? Yes, seat selection is available during booking and online check-in, subject to availability.",
+        "What is the policy for unaccompanied minors? Children aged 5-12 can travel alone with our unaccompanied minor service. Additional fees apply."
+    ]
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=200, chunk_overlap=20
+    )
+    faq_chunks = text_splitter.create_documents(faqs)
+    vectorstore = InMemoryVectorStore.from_documents(
+        documents=faq_chunks, embedding=OpenAIEmbeddings()
+    )
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+    retriever_tool = create_retriever_tool(
+        retriever,
+        "flight_faqs",
+        "Search through airline FAQs for baggage, check-in, delays, pets, seat selection, and more.",
+    )
+    return retriever_tool

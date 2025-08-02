@@ -1,6 +1,0 @@
-beautifulsoup4
-jupyter
-langchain-community
-langchain[openai]
-langgraph 
-requests

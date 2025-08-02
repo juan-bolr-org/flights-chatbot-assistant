@@ -1,17 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-import pickle
 import os
 from pathlib import Path
 from utils import get_current_user
-from utils.chatbot_tools import create_chatbot_tools
+from utils.chatbot_tools import create_chatbot_tools, create_faqs_retriever_tool
+import re
 
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_openai import OpenAIEmbeddings
-from langchain.tools.retriever import create_retriever_tool
 from langchain.chat_models import init_chat_model
-from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -24,30 +20,31 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-response_model, retriever_tool = None, None
+response_model, faq_tool = None, None
+system_context = """
+    You are a helpful flight booking assistant. You have access to several tools:
+    1. flight_faqs: Use this for general flight information, policies, FAQ, baggage rules, check-in procedures, etc.
+    2. search_flights: Use this to search for available flights based on specific criteria
+    3. list_all_flights: Use this to show all available flights
+    4. book_flight: Use this to make flight reservations
+    5. get_my_bookings: Use this to show user's current bookings
+    6. cancel_booking: Use this to cancel existing bookings
+    You can also help users with travel-related recommendations, trip planning, and general advice for their journeys. However, please clarify to users that any information or suggestions outside the scope of these tools may be outdated or inaccurate, and they should verify such details independently.
+    Always be helpful and provide accurate information. If you need to search for flights or manage bookings, use the appropriate API tools. For general questions about flight policies or procedures, use the flight_faqs tool.
+"""
 
 def init_chat():
     """Initialize the chat model and retriever tool."""
-    global response_model, retriever_tool
+    global response_model, faq_tool, system_context
     print("Initializing chat model and retriever tool...")
     try:   
-        # Load flight_docs.pkl from chatbot folder TODO: Fix path of the model
-        flight_docs_path = Path(__file__).parent.parent.parent / "flight_docs.pkl"
-        with open(flight_docs_path, "rb") as f:
-            flight_splits = pickle.load(f)
-
-        vectorstore = InMemoryVectorStore.from_documents(
-            documents=flight_splits, embedding=OpenAIEmbeddings()
-        )
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
-
-        retriever_tool = create_retriever_tool(
-            retriever,
-            "retrieve_flight_docs",
-            "Search through flight documentation and FAQ information. Use this for general flight policies, procedures, baggage rules, check-in information, and other flight-related documentation that users might ask about.",
-        )
-
+        # Create retriever tool
+        faq_tool = create_faqs_retriever_tool()
+        
         response_model = init_chat_model("openai:gpt-4.1", temperature=0)
+
+        # Normalize system_context only once
+        system_context = re.sub(r"\s+", " ", system_context).strip()
 
     except Exception as e:
         print(f"Error initializing chat: {e}")
@@ -75,28 +72,17 @@ async def chat_endpoint(
         )
         
         # Add the retriever tool to the list - putting it first so it's prioritized for general FAQ/documentation queries
-        all_tools = chatbot_tools
+        if not faq_tool is None:
+            chatbot_tools = chatbot_tools + [faq_tool]
+        else:
+            print("No FAQ tool available, skipping...")
         
         # Create the agent with all tools
         agent = create_react_agent(
-            tools=all_tools,
+            tools=chatbot_tools,
             model=response_model,
             verbose=True,
         )
-        
-        # Create a system message to help the agent understand when to use each tool
-        system_context = """
-        You are a helpful flight booking assistant. You have access to several tools:
-        
-        1. retrieve_flight_docs: Use this for general flight information, policies, FAQ, baggage rules, check-in procedures, etc.
-        2. search_flights: Use this to search for available flights based on specific criteria
-        3. list_all_flights: Use this to show all available flights
-        4. book_flight: Use this to make flight reservations
-        5. get_my_bookings: Use this to show user's current bookings
-        6. cancel_booking: Use this to cancel existing bookings
-        
-        Always be helpful and provide accurate information. If you need to search for flights or manage bookings, use the appropriate API tools. For general questions about flight policies or procedures, use the document retriever tool.
-        """
         
         # Invoke the agent with the user's message and system context
         response = await agent.ainvoke({
