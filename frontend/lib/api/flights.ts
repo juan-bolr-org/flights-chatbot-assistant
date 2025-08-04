@@ -103,7 +103,27 @@ export async function deleteFlight(id: string | number): Promise<void> {
     }
 }
 
-export async function createBooking(): Promise<void> {
-    // Placeholder for booking creation logic
-    throw new Error('Booking creation not implemented yet.');
+export async function createBooking(flight_id: string, token: string): Promise<void> {
+    try {
+        const res = await fetch(`${API_URL}/bookings`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ flight_id: flight_id }),
+        });
+
+        if (!res.ok) throw new Error('Failed to create booking.');
+
+        const data = await res.json();
+        if (!data.data) throw new Error('Unexpected server response.');
+
+        return data.data;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`Network error while creating booking: ${error.message}`);
+        }
+        throw new Error('Unknown error while creating booking.');
+    }
 }

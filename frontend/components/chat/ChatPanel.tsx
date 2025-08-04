@@ -13,6 +13,7 @@ import {
 import { ExitIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
 import { sendChatMessage } from '@/lib/api/chat';
 import { AlertCircleIcon } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
 type Message = {
     role: 'user' | 'bot';
@@ -36,6 +37,7 @@ export function ChatPanel({
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const { user } = useUser();
 
     useEffect(() => {
         if (open) {
@@ -59,10 +61,18 @@ export function ChatPanel({
         setLoading(true);
 
         try {
-            const botResponse = await sendChatMessage(userMessage.content);
-            const botMessage: Message = { role: 'bot', content: botResponse };
-            setMessageCount(messageCount + 1);
-            setMessages((prev) => [...prev, botMessage]);
+            if (user && user.token) {
+                const botResponse = await sendChatMessage(user.token.access_token, userMessage.content);
+                const botMessage: Message = { role: 'bot', content: botResponse };
+                setMessageCount(messageCount + 1);
+                setMessages((prev) => [...prev, botMessage]);
+            } else {
+                setMessages((prev) => [
+                    ...prev,
+                    { role: 'bot', content: 'Please log in to send messages.' },
+                ]);
+            }
+
         } catch {
             setMessages((prev) => [
                 ...prev,
@@ -113,7 +123,7 @@ export function ChatPanel({
             </ScrollArea>
 
 
-            {localStorage.getItem('token') ? (
+            {user ? (
                 <Flex mt="3" gap="2" align="center">
                     <TextArea
                         placeholder="Write your message..."

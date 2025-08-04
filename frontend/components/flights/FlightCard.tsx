@@ -4,7 +4,7 @@ import { Flight } from '@/lib/types/flight';
 import { formatDate } from '@/lib/utils/date';
 import { formatCurrency } from '@/lib/utils/currency';
 import { Calendar, Plane } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
     Card,
@@ -15,12 +15,28 @@ import {
     Badge,
     Box,
 } from '@radix-ui/themes';
+import { useUser } from '@/context/UserContext';
+import { createBooking } from '@/lib/api/flights';
 
 interface FlightCardProps {
     flight: Flight;
 }
 
 export function FlightCard({ flight }: FlightCardProps) {
+    const router = useRouter();
+    const { user } = useUser();
+    const handlePurchase = () => {
+        // Logic to handle flight purchase
+        console.log(`Purchasing flight with ID: ${flight.id}`);
+        if (!user || !user.token) {
+            console.log('User is not logged in');
+            return;
+        }
+        createBooking(flight.id.toString(), user.token.access_token)
+        router.push(`/bookings`);
+        
+    };
+
     return (
         <Card
             size="3"
@@ -101,11 +117,9 @@ export function FlightCard({ flight }: FlightCardProps) {
                     </Text>
 
                     <Flex gap="3" align="center">
-                        <Link href={`/flights/${flight.id}`}>
-                            <Button highContrast>
-                                Purchase
-                            </Button>
-                        </Link>
+                        <Button onClick={handlePurchase}>
+                            Purchase
+                        </Button>
                     </Flex>
                 </Flex>
             </Box>

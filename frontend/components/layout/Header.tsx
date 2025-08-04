@@ -5,7 +5,7 @@ import { PersonIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/api/auth';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/context/UserContext';
 
 export default function Header() {
   const router = useRouter();
