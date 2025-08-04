@@ -150,6 +150,10 @@ class LoggingManager:
             self.initialize()
         return logging.getLogger(f"flights_chatbot.{name}")
     
+    def is_initialized(self) -> bool:
+        """Check if the logging manager is initialized."""
+        return self._is_initialized
+    
     def check_critical_env_vars(self) -> None:
         """Check for critical environment variables and fail fast if missing."""
         logger = self.get_logger("startup")

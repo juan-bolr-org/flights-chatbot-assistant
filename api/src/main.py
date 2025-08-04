@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from routers import users_router, flights_router, bookings_router, chat_router
-from resources import AppResources
+from routers import users_router, flights_router, bookings_router, chat_router, health_check_router
+from resources.app_resources import app_resources
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         # Initialize all application resources (logging is initialized first inside)
-        app_resources = AppResources()
         app_resources.initialize_all()
         
         # Now we can get the logger since logging is initialized
@@ -50,6 +49,7 @@ app.include_router(users_router)
 app.include_router(flights_router)
 app.include_router(bookings_router)
 app.include_router(chat_router)
+app.include_router(health_check_router)
 
 
 @app.get("/")

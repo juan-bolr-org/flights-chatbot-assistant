@@ -98,6 +98,10 @@ class CryptoManager:
             return payload.get("sub")
         except ValueError:
             return None
+    
+    def is_initialized(self) -> bool:
+        """Check if the crypto manager is initialized."""
+        return self._is_initialized
 
 
 # Global instance - Singleton pattern
