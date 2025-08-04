@@ -13,3 +13,5 @@ numpy
 httpx
 aiohttp
 langgraph
+apscheduler
+colorlog

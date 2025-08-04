@@ -12,6 +12,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     phone = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
+    token_expiration = Column(DateTime, nullable=True)
     bookings = relationship('Booking', back_populates='user')
     chatbot_messages = relationship('ChatbotMessage', back_populates='user')
 

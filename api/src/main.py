@@ -1,17 +1,42 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from db import init_db
 from routers import users_router, flights_router, bookings_router, chat_router
-from utils import init_data
-from routers.chat import init_chat
+from resources import AppResources
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    init_data()
-    init_chat()
-    yield
+    try:
+        # Initialize all application resources (logging is initialized first inside)
+        app_resources = AppResources()
+        app_resources.initialize_all()
+        
+        # Now we can get the logger since logging is initialized
+        logger = app_resources.logging.get_logger("main")
+        logger.info("Starting Flights Chatbot Assistant API...")
+        
+        # Store reference for shutdown
+        app.state.app_resources = app_resources
+        logger.info("Application startup completed successfully")
+        
+        yield
+        
+        # Shutdown cleanup
+        logger.info("Starting application shutdown...")
+        app_resources.shutdown_all()
+        logger.info("Application shutdown completed")
+        
+    except Exception as e:
+        # If we can't get a logger, fall back to print
+        try:
+            logger = app_resources.logging.get_logger("main") if 'app_resources' in locals() else None
+            if logger:
+                logger.critical(f"Failed to start application: {e}", exc_info=True)
+            else:
+                print(f"CRITICAL: Failed to start application: {e}")
+        except:
+            print(f"CRITICAL: Failed to start application: {e}")
+        raise
 
 app = FastAPI(
     title="Flights Chatbot Assistant API",
@@ -25,6 +50,7 @@ app.include_router(users_router)
 app.include_router(flights_router)
 app.include_router(bookings_router)
 app.include_router(chat_router)
+
 
 @app.get("/")
 async def root():

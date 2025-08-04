@@ -1,16 +1,4 @@
-from .auth import (
-    get_db,
-    get_password_hash,
-    verify_password,
-    create_access_token,
-    get_current_user
-)
-from .seed_data import init_data
+# Utils module - auth functions have been moved to resources.crypto and resources.dependencies
+# Import only what's available in other utils modules
 
-__all__ = [
-    "get_db",
-    "get_password_hash",
-    "verify_password", 
-    "create_access_token",
-    "get_current_user"
-]
+__all__ = []

@@ -10,6 +10,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
+from resources.logging import get_logger
+
+logger = get_logger("chatbot_tools")
 
 
 # Pydantic models for tool arguments

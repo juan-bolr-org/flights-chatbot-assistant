@@ -4,7 +4,7 @@ from typing import List, Optional
 import datetime
 from schemas import BookingCreate, BookingResponse, BookingUpdate
 from models import User, Flight, Booking
-from utils import get_db, get_current_user
+from resources.dependencies import get_database_session as get_db, get_current_user
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 

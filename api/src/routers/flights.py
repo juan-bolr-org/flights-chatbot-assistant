@@ -5,7 +5,7 @@ import datetime
 from datetime import timedelta
 from schemas import FlightResponse, FlightCreate
 from models import User, Flight
-from utils import get_db, get_current_user
+from resources.dependencies import get_database_session as get_db, get_current_user
 
 router = APIRouter(prefix="/flights", tags=["flights"])
 

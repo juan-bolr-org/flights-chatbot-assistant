@@ -1,17 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from models import User
 import os
-from pathlib import Path
-from utils import get_current_user
-from utils.chatbot_tools import create_chatbot_tools, create_faqs_retriever_tool
-import re
-
-from langchain.chat_models import init_chat_model
+from resources.dependencies import get_current_user, get_chat_model, get_chat_memory, get_faq_tool, get_system_context
+from utils.chatbot_tools import create_chatbot_tools
+from langchain.chat_models.base import BaseChatModel
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
+from resources.logging import get_logger
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 security = HTTPBearer()
+logger = get_logger("chat_router")
 
 
 class ChatRequest(BaseModel):
@@ -20,85 +21,62 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
 
-response_model, faq_tool = None, None
-system_context = """
-    You are a helpful flight booking assistant. You have access to several tools:
-    1. flight_faqs: Use this for general flight information, policies, FAQ, baggage rules, check-in procedures, etc.
-    2. search_flights: Use this to search for available flights based on specific criteria
-    3. list_all_flights: Use this to show all available flights
-    4. book_flight: Use this to make flight reservations
-    5. get_my_bookings: Use this to show user's current bookings
-    6. cancel_booking: Use this to cancel existing bookings
-    You can also help users with travel-related recommendations, trip planning, and general advice for their journeys. However, please clarify to users that any information or suggestions outside the scope of these tools may be outdated or inaccurate, and they should verify such details independently.
-    Always be helpful and provide accurate information. If you need to search for flights or manage bookings, use the appropriate API tools. For general questions about flight policies or procedures, use the flight_faqs tool.
-"""
-
-def init_chat():
-    """Initialize the chat model and retriever tool."""
-    global response_model, faq_tool, system_context
-    print("Initializing chat model and retriever tool...")
-    try:   
-        # Create retriever tool
-        faq_tool = create_faqs_retriever_tool()
-        
-        response_model = init_chat_model("openai:gpt-4.1", temperature=0)
-
-        # Normalize system_context only once
-        system_context = re.sub(r"\s+", " ", system_context).strip()
-
-    except Exception as e:
-        print(f"Error initializing chat: {e}")
-
-
+api_base_port = os.getenv("PORT", "8000")
 
 @router.post("", response_model=ChatResponse)
 async def chat_endpoint(
     request: ChatRequest, 
-    user = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    chat_model: BaseChatModel = Depends(get_chat_model),
+    memory: MemorySaver = Depends(get_chat_memory),
+    faq_tool = Depends(get_faq_tool),
+    system_context: str = Depends(get_system_context)
 ):
     try:
-        # Get the user's token for API calls
         user_token = credentials.credentials
         
-        # Get API base Port from environment or use default
-        api_base_port = os.getenv("PORT", "8000")
-        
-        # Create chatbot tools with user context
+        logger.debug(f"Creating chatbot tools for user {user.id}")
         chatbot_tools = create_chatbot_tools(
             user_token=user_token,
             user_id=user.id,
             api_base_url=f"http://localhost:{api_base_port}",
         )
         
-        # Add the retriever tool to the list - putting it first so it's prioritized for general FAQ/documentation queries
-        if not faq_tool is None:
+        # Add FAQ tool if available
+        if faq_tool is not None:
             chatbot_tools = chatbot_tools + [faq_tool]
+            logger.debug("Added FAQ tool to chatbot tools")
         else:
-            print("No FAQ tool available, skipping...")
-        
-        # Create the agent with all tools
+            logger.warning("No FAQ tool available, skipping...")
+
+        logger.debug("Creating react agent...")
         agent = create_react_agent(
             tools=chatbot_tools,
-            model=response_model,
-            verbose=True,
+            model=chat_model,
+            checkpointer=memory
         )
         
-        # Invoke the agent with the user's message and system context
-        response = await agent.ainvoke({
-            "messages": [
-                {"role": "system", "content": system_context},
-                {"role": "user", "content": request.content}
-            ]
-        })
-
-        for message in response["messages"]:
-            print(message.content)
+        logger.debug(f"Invoking agent for user {user.id}")
+        response = await agent.ainvoke(
+            {
+                "messages": [
+                    {"role": "system", "content": system_context},
+                    {"role": "user", "content": request.content}
+                ],
+            },
+            config={"configurable": {"session_id": f"chat_session_{user.id}", "thread_id": f"chat_thread_{user.id}"}}
+        )
         
-        # Extract the final response
         answer = response["messages"][-1].content
+        logger.info(f"Successfully processed chat request for user {user.email}")
+        logger.debug(f"Response length: {len(answer)} characters")
         
         return ChatResponse(response=answer)
+        
     except Exception as e:
-        print(f"Error processing chat request: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing chat request: {str(e)}")
+        logger.error(f"Error processing chat request for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error processing chat request: {str(e)}"
+        )
