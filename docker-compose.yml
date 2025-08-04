@@ -7,6 +7,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - PORT=8000
       - SECRET_KEY=${SECRET_KEY}
+      - APPINSIGHTS_CONNECTION_STRING=${APPINSIGHTS_CONNECTION_STRING}
     ports:
       - "8000:8000"
     restart: unless-stopped

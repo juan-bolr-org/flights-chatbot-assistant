@@ -17,6 +17,7 @@ from typing import Optional
 from pathlib import Path
 import colorlog
 from pydantic import BaseModel, Field
+from opencensus.ext.azure.log_exporter import AzureLogHandler 
 
 
 class LoggingConfig(BaseModel):
@@ -134,6 +135,17 @@ class LoggingManager:
         root_logger.addHandler(error_file_handler)
         root_logger.addHandler(stdout_handler)
         root_logger.addHandler(stderr_handler)
+
+        # NUEVO: Azure Application Insights handler
+        app_insights_conn_str = os.getenv("APPINSIGHTS_CONNECTION_STRING")
+        if app_insights_conn_str:
+            azure_handler = AzureLogHandler(connection_string=app_insights_conn_str)
+            azure_handler.setLevel(logging.INFO)
+            root_logger.addHandler(azure_handler)
+            root_logger.info("Azure Application Insights logging is enabled.")
+        else:
+            root_logger.warning("APPINSIGHTS_CONNECTION_STRING not set; skipping AzureLogHandler.")
+
         
         # Create main application logger
         self.main_logger = logging.getLogger("flights_chatbot")
