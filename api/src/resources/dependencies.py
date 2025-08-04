@@ -69,5 +69,14 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="User not found")
     
     return user
+
+
+def get_agent(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    user: User = Depends(get_current_user)
+):
+    """Dependency function to get a configured agent for the current user."""
+    token = credentials.credentials
+    return chat_manager.create_agent(user_token=token, user_id=user.id)
     
 

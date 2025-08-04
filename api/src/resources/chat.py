@@ -1,10 +1,12 @@
 from langchain.chat_models import init_chat_model
 from langchain.chat_models.base import BaseChatModel
 from langgraph.checkpoint.memory import MemorySaver
-from utils.chatbot_tools import create_faqs_retriever_tool
-from typing import Optional
+from langgraph.prebuilt import create_react_agent
+from utils.chatbot_tools import create_faqs_retriever_tool, create_chatbot_tools
+from typing import Optional, List
 from pydantic import BaseModel, Field
 import re
+import os
 from .logging import get_logger
 
 logger = get_logger("chat")
@@ -38,6 +40,7 @@ class ChatManager:
         self.response_model: Optional[BaseChatModel] = None
         self.faq_tool: Optional[object] = None  # Type will depend on the tool implementation
         self.memory: Optional[MemorySaver] = None
+        self.agent: Optional[object] = None  # The react agent
         self._is_initialized: bool = False
     
     def initialize(self) -> None:
@@ -67,6 +70,42 @@ class ChatManager:
             
         except Exception as e:
             logger.error(f"Error initializing chat manager: {e}", exc_info=True)
+            raise
+    
+    def create_agent(self, user_token: str, user_id: int) -> object:
+        """Create and return a configured react agent for the user."""
+        if not self._is_initialized:
+            self.initialize()
+        
+        try:
+            api_base_port = os.getenv("PORT", "8000")
+            api_base_url = f"http://localhost:{api_base_port}"
+            
+            logger.debug(f"Creating chatbot tools for user {user_id}")
+            chatbot_tools = create_chatbot_tools(
+                user_token=user_token,
+                user_id=user_id,
+                api_base_url=api_base_url,
+            )
+            
+            # Add FAQ tool if available
+            if self.faq_tool is not None:
+                chatbot_tools = chatbot_tools + [self.faq_tool]
+                logger.debug("Added FAQ tool to chatbot tools")
+            else:
+                logger.warning("No FAQ tool available, skipping...")
+
+            logger.debug("Creating react agent...")
+            agent = create_react_agent(
+                tools=chatbot_tools,
+                model=self.response_model,
+                checkpointer=self.memory
+            )
+            
+            return agent
+            
+        except Exception as e:
+            logger.error(f"Error creating agent for user {user_id}: {e}", exc_info=True)
             raise
     
     def get_response_model(self) -> BaseChatModel:
