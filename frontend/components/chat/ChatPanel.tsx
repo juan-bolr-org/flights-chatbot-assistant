@@ -61,6 +61,7 @@ export function ChatPanel({
         setLoading(true);
 
         try {
+            console.log("user", user);
             if (user && user.token) {
                 const botResponse = await sendChatMessage(user.token.access_token, userMessage.content);
                 const botMessage: Message = { role: 'bot', content: botResponse };

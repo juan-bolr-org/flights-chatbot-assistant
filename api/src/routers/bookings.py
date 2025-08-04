@@ -104,18 +104,13 @@ def delete_booking(
     
     return {"message": "Booking cancelled successfully"}
 
-@router.get("/user/{user_id}", response_model=List[BookingResponse])
+@router.get("/user", response_model=List[BookingResponse])
 def get_user_bookings(
-    user_id: int, 
     status: Optional[str] = None, 
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
-):
-    # Ensure user can only access their own bookings
-    if current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    query = db.query(Booking).filter(Booking.user_id == user_id)
+):  
+    query = db.query(Booking).filter(Booking.user_id == current_user.id)
     
     if status:
         if status == "upcoming":

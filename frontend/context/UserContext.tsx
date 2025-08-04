@@ -31,10 +31,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const decodedUser = parseJwt(token);
-      if (decodedUser) setUser(decodedUser as User);
+    const userLocal = localStorage.getItem('user');
+    if (userLocal) {
+      setUser(JSON.parse(userLocal) as User);
     }
   }, []);
 

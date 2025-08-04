@@ -51,6 +51,7 @@ export default function LoginPage() {
       if (result) {
         if (result.token && result.token.access_token) {
           localStorage.setItem('token', result.token.access_token);
+          localStorage.setItem('user', JSON.stringify({ name: result.name, email: result.email, id: result.id }));
           setUser({ name: result.name, email: result.email, id: result.id, token: result.token });
           router.push('/');
         } else {

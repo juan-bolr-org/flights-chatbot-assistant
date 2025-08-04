@@ -1,4 +1,4 @@
-import { AuthResponse, Token, RegisterData, User } from '../types/user';
+import { AuthResponse, Token, RegisterData } from '../types/user';
 
 const API_URL = '/api';
 

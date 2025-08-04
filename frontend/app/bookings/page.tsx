@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useContext } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserBookings } from '@/lib/api/booking';
 import { Booking } from '@/lib/types/booking';
