@@ -7,6 +7,7 @@ from .chat import chat_manager
 from .crypto import crypto_manager, CryptoManager
 from langchain.chat_models.base import BaseChatModel
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph.state import CompiledStateGraph
 from models import User
 
 
@@ -74,7 +75,7 @@ def get_current_user(
 def get_agent(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     user: User = Depends(get_current_user)
-):
+) -> CompiledStateGraph:
     """Dependency function to get a configured agent for the current user."""
     token = credentials.credentials
     return chat_manager.create_agent(user_token=token, user_id=user.id)

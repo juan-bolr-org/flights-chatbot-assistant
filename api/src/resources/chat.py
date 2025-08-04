@@ -2,6 +2,7 @@ from langchain.chat_models import init_chat_model
 from langchain.chat_models.base import BaseChatModel
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
+from langgraph.graph.state import CompiledStateGraph
 from utils.chatbot_tools import create_faqs_retriever_tool, create_chatbot_tools
 from typing import Optional, List
 from pydantic import BaseModel, Field
@@ -72,7 +73,7 @@ class ChatManager:
             logger.error(f"Error initializing chat manager: {e}", exc_info=True)
             raise
     
-    def create_agent(self, user_token: str, user_id: int) -> object:
+    def create_agent(self, user_token: str, user_id: int) -> CompiledStateGraph:
         """Create and return a configured react agent for the user."""
         if not self._is_initialized:
             self.initialize()

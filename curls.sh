@@ -6,9 +6,6 @@ export TOKEN1=$(curl -s -X POST "http://localhost:8000/users/login" \
   -d '{"email": "default@default.com", "password": "default@default.com"}' | jq -r .token.access_token)
 echo "User1 token: $TOKEN1"
 
-
-echo -e "\n"
-
 # send message to the chatbot
 curl -X POST "http://localhost:8000/chat" \
   -H "Authorization: Bearer $TOKEN1" \
@@ -24,3 +21,15 @@ curl -X POST "http://localhost:8000/chat" \
   -d '{"content": "What was the last message?"}' \
 
 echo -e "\n"
+
+# get chat history
+curl -X GET "http://localhost:8000/chat/history" \
+  -H "Authorization: Bearer $TOKEN1" \
+  -H "Content-Type: application/json"
+
+echo -e "\n"
+
+# clear chat history
+curl -X DELETE "http://localhost:8000/chat/history" \
+  -H "Authorization: Bearer $TOKEN1" \
+  -H "Content-Type: application/json"
