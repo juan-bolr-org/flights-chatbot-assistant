@@ -15,3 +15,6 @@ aiohttp
 langgraph
 apscheduler
 colorlog
+pytest
+pytest-mock
+opencensus-ext-azure

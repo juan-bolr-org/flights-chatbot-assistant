@@ -148,6 +148,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/fchat
 
 # Spyder project settings
 .spyderproject
