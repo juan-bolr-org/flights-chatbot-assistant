@@ -49,6 +49,6 @@ class ChatbotMessage(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     session_id = Column(String, nullable=False)
     user_message = Column(Text, nullable=False)
-    bot_response = Column(Text, nullable=False)
+    bot_response = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     user = relationship('User', back_populates='chatbot_messages')
