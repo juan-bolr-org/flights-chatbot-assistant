@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
-from repository.user import User
+from repository import User
 from schemas import FlightResponse, FlightCreate
 from resources.dependencies import get_current_user
 from resources.logging import get_logger
-from repository import FlightRepository, create_flight_repository
+from services import FlightService, create_flight_service
+from exceptions import ApiException
+from utils.error_handlers import api_exception_to_http_exception
 
 router = APIRouter(prefix="/flights", tags=["flights"])
 logger = get_logger("flights_router")
@@ -14,21 +16,15 @@ def search_flights(
     origin: str, 
     destination: str, 
     departure_date: str,
-    flight_repo: FlightRepository = Depends(create_flight_repository)
+    flight_service: FlightService = Depends(create_flight_service)
 ):
     try:
-        logger.debug(f"Searching flights from {origin} to {destination} on {departure_date}")
-        
-        flights = flight_repo.search_flights(origin, destination, departure_date)
-        
-        logger.info(f"Found {len(flights)} flights from {origin} to {destination} on {departure_date}")
-        logger.debug(f"Flight IDs found: {[flight.id for flight in flights]}")
-        
+        flights = flight_service.search_flights(origin, destination, departure_date)
         return flights
         
-    except ValueError as e:
+    except ApiException as e:
         logger.warning(f"Invalid date format provided: {departure_date}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise api_exception_to_http_exception(e)
     except Exception as e:
         logger.error(f"Error searching flights from {origin} to {destination}: {e}", exc_info=True)
         raise HTTPException(
@@ -40,23 +36,10 @@ def search_flights(
 def create_flight(
     flight: FlightCreate,
     current_user: User = Depends(get_current_user),
-    flight_repo: FlightRepository = Depends(create_flight_repository)
+    flight_service: FlightService = Depends(create_flight_service)
 ):
     try:
-        logger.debug(f"Creating flight from {flight.origin} to {flight.destination} by user {current_user.id}")
-        
-        # Optionally, check if current_user is admin here
-        new_flight = flight_repo.create(
-            origin=flight.origin,
-            destination=flight.destination,
-            departure_time=flight.departure_time,
-            arrival_time=flight.arrival_time,
-            airline=flight.airline,
-            price=int(flight.price),
-            status=flight.status or "scheduled"
-        )
-        
-        logger.info(f"Successfully created flight {new_flight.id} from {flight.origin} to {flight.destination} by user {current_user.email}")
+        new_flight = flight_service.create_flight(current_user, flight)
         return new_flight
         
     except Exception as e:
@@ -68,16 +51,10 @@ def create_flight(
 
 @router.get("/list", response_model=List[FlightResponse])
 def list_flights(
-    flight_repo: FlightRepository = Depends(create_flight_repository)
+    flight_service: FlightService = Depends(create_flight_service)
 ):
     try:
-        logger.debug("Retrieving all flights")
-        
-        flights = flight_repo.list_all()
-        
-        logger.info(f"Successfully retrieved {len(flights)} flights")
-        logger.debug(f"Flight IDs retrieved: {[flight.id for flight in flights]}")
-        
+        flights = flight_service.list_flights()
         return flights
         
     except Exception as e:
