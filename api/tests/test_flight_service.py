@@ -14,8 +14,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from services.flight import FlightBusinessService
 from repository.flight import FlightRepository
 from models import Flight, User
-from schemas.flight import FlightCreate, FlightSearch
-from exceptions import InvalidDateFormatError, InvalidFlightTimesError, InvalidFlightPriceError
+from schemas.flight import FlightCreate, FlightSearch, FlightResponse
+from exceptions import InvalidDateFormatError, InvalidFlightTimesError, InvalidFlightPriceError, ErrorCode
 
 
 class TestFlightService:
@@ -86,11 +86,21 @@ class TestFlightService:
         flight1.id = 1
         flight1.origin = "New York"
         flight1.destination = "Los Angeles"
+        flight1.departure_time = datetime(2025, 12, 25, 10, 0, 0, tzinfo=timezone.utc)
+        flight1.arrival_time = datetime(2025, 12, 25, 13, 30, 0, tzinfo=timezone.utc)
+        flight1.airline = "American Airlines"
+        flight1.status = "scheduled"
+        flight1.price = 299
         
         flight2 = Mock(spec=Flight)
         flight2.id = 2
         flight2.origin = "Chicago"
         flight2.destination = "Miami"
+        flight2.departure_time = datetime(2025, 12, 26, 14, 0, 0, tzinfo=timezone.utc)
+        flight2.arrival_time = datetime(2025, 12, 26, 17, 45, 0, tzinfo=timezone.utc)
+        flight2.airline = "Delta Airlines"
+        flight2.status = "scheduled"
+        flight2.price = 399
         
         return [flight1, flight2]
     
@@ -104,9 +114,17 @@ class TestFlightService:
         # Execute
         result = flight_service.search_flights("New York", "Los Angeles", "2025-12-25")
         
-        # Verify
-        assert result == sample_flight_list
+        # Verify - now expecting FlightResponse objects
+        assert isinstance(result, list)
         assert len(result) == 2
+        assert isinstance(result[0], FlightResponse)
+        assert result[0].id == 1
+        assert result[0].origin == "New York"
+        assert result[0].destination == "Los Angeles"
+        assert isinstance(result[1], FlightResponse)
+        assert result[1].id == 2
+        assert result[1].origin == "Chicago"
+        assert result[1].destination == "Miami"
         
         # Verify repository call
         mock_flight_repo.search_flights.assert_called_once_with("New York", "Los Angeles", "2025-12-25")
@@ -119,8 +137,8 @@ class TestFlightService:
         # Execute
         result = flight_service.search_flights("Boston", "Seattle", "2025-12-25")
         
-        # Verify
-        assert result == []
+        # Verify - now expecting empty list of FlightResponse objects
+        assert isinstance(result, list)
         assert len(result) == 0
         
         # Verify repository call
@@ -136,7 +154,7 @@ class TestFlightService:
             flight_service.search_flights("New York", "Los Angeles", "2025/12/25")
         
         # Verify exception details
-        assert exc_info.value.error_code.value == "INVALID_DATE_FORMAT"
+        assert exc_info.value.error_code == ErrorCode.INVALID_DATE_FORMAT
         assert exc_info.value.details["provided_date"] == "2025/12/25"
         
         # Verify repository call
@@ -150,8 +168,10 @@ class TestFlightService:
         # Execute with different case
         result = flight_service.search_flights("new york", "LOS ANGELES", "2025-12-25")
         
-        # Verify
-        assert result == sample_flight_list
+        # Verify - now expecting FlightResponse objects
+        assert isinstance(result, list)
+        assert len(result) == 2
+        assert isinstance(result[0], FlightResponse)
         
         # Verify repository call preserves original case
         mock_flight_repo.search_flights.assert_called_once_with("new york", "LOS ANGELES", "2025-12-25")
@@ -166,11 +186,14 @@ class TestFlightService:
         # Execute
         result = flight_service.create_flight(sample_user, sample_flight_create)
         
-        # Verify
-        assert result == sample_db_flight
+        # Verify - now expecting FlightResponse object
+        assert isinstance(result, FlightResponse)
         assert result.id == 1
         assert result.origin == "New York"
         assert result.destination == "Los Angeles"
+        assert result.airline == "American Airlines"
+        assert result.price == 299
+        assert result.status == "scheduled"
         
         # Verify repository call
         mock_flight_repo.create.assert_called_once_with(
@@ -191,8 +214,11 @@ class TestFlightService:
         # Execute
         result = flight_service.create_flight(sample_user, sample_flight_create_no_status)
         
-        # Verify
-        assert result == sample_db_flight
+        # Verify - now expecting FlightResponse object
+        assert isinstance(result, FlightResponse)
+        assert result.id == 1
+        assert result.origin == "New York"
+        assert result.destination == "Los Angeles"
         
         # Verify repository call with default status
         mock_flight_repo.create.assert_called_once_with(
@@ -257,9 +283,15 @@ class TestFlightService:
         # Execute
         result = flight_service.list_flights()
         
-        # Verify
-        assert result == sample_flight_list
+        # Verify - now expecting FlightResponse objects
+        assert isinstance(result, list)
         assert len(result) == 2
+        assert isinstance(result[0], FlightResponse)
+        assert result[0].id == 1
+        assert result[0].origin == "New York"
+        assert isinstance(result[1], FlightResponse)
+        assert result[1].id == 2
+        assert result[1].origin == "Chicago"
         
         # Verify repository call
         mock_flight_repo.list_all.assert_called_once()
@@ -272,8 +304,8 @@ class TestFlightService:
         # Execute
         result = flight_service.list_flights()
         
-        # Verify
-        assert result == []
+        # Verify - now expecting empty list of FlightResponse objects
+        assert isinstance(result, list)
         assert len(result) == 0
         
         # Verify repository call
@@ -301,8 +333,10 @@ class TestFlightService:
         # Execute with special characters
         result = flight_service.search_flights("São Paulo", "México City", "2025-12-25")
         
-        # Verify
-        assert result == sample_flight_list
+        # Verify - now expecting FlightResponse objects
+        assert isinstance(result, list)
+        assert len(result) == 2
+        assert isinstance(result[0], FlightResponse)
         
         # Verify repository call preserves special characters
         mock_flight_repo.search_flights.assert_called_once_with("São Paulo", "México City", "2025-12-25")

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from fastapi import Depends
 from repository import User, Flight
-from schemas import FlightCreate
+from schemas import FlightCreate, FlightResponse
 from repository import FlightRepository, create_flight_repository
 from resources.logging import get_logger
 from exceptions import InvalidDateFormatError, InvalidFlightTimesError, InvalidFlightPriceError
@@ -14,17 +14,17 @@ class FlightService(ABC):
     """Abstract base class for Flight service operations."""
     
     @abstractmethod
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[Flight]:
+    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[FlightResponse]:
         """Search for flights by origin, destination, and departure date."""
         pass
     
     @abstractmethod
-    def create_flight(self, user: User, flight: FlightCreate) -> Flight:
+    def create_flight(self, user: User, flight: FlightCreate) -> FlightResponse:
         """Create a new flight."""
         pass
     
     @abstractmethod
-    def list_flights(self) -> List[Flight]:
+    def list_flights(self) -> List[FlightResponse]:
         """Get all flights."""
         pass
 
@@ -35,7 +35,7 @@ class FlightBusinessService(FlightService):
     def __init__(self, flight_repo: FlightRepository):
         self.flight_repo = flight_repo
     
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[Flight]:
+    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[FlightResponse]:
         """Search for flights by origin, destination, and departure date."""
         logger.debug(f"Searching flights from {origin} to {destination} on {departure_date}")
         
@@ -45,12 +45,25 @@ class FlightBusinessService(FlightService):
             logger.info(f"Found {len(flights)} flights from {origin} to {destination} on {departure_date}")
             logger.debug(f"Flight IDs found: {[flight.id for flight in flights]}")
             
-            return flights
+            # Convert Flight models to FlightResponse schemas
+            flight_responses = [
+                FlightResponse(
+                    id=flight.id,
+                    origin=flight.origin,
+                    destination=flight.destination,
+                    departure_time=flight.departure_time,
+                    arrival_time=flight.arrival_time,
+                    airline=flight.airline,
+                    status=flight.status,
+                    price=flight.price
+                ) for flight in flights
+            ]
+            return flight_responses
         except ValueError as e:
             logger.warning(f"Invalid date format provided: {departure_date}")
             raise InvalidDateFormatError(departure_date)
     
-    def create_flight(self, user: User, flight: FlightCreate) -> Flight:
+    def create_flight(self, user: User, flight: FlightCreate) -> FlightResponse:
         """Create a new flight."""
         logger.debug(f"Creating flight from {flight.origin} to {flight.destination} by user {user.id}")
 
@@ -74,9 +87,20 @@ class FlightBusinessService(FlightService):
         )
         
         logger.info(f"Successfully created flight {new_flight.id} from {flight.origin} to {flight.destination} by user {user.email}")
-        return new_flight
+        
+        # Convert Flight model to FlightResponse schema
+        return FlightResponse(
+            id=new_flight.id,
+            origin=new_flight.origin,
+            destination=new_flight.destination,
+            departure_time=new_flight.departure_time,
+            arrival_time=new_flight.arrival_time,
+            airline=new_flight.airline,
+            status=new_flight.status,
+            price=new_flight.price
+        )
     
-    def list_flights(self) -> List[Flight]:
+    def list_flights(self) -> List[FlightResponse]:
         """Get all flights."""
         logger.debug("Retrieving all flights")
         
@@ -85,7 +109,20 @@ class FlightBusinessService(FlightService):
         logger.info(f"Successfully retrieved {len(flights)} flights")
         logger.debug(f"Flight IDs retrieved: {[flight.id for flight in flights]}")
         
-        return flights
+        # Convert Flight models to FlightResponse schemas
+        flight_responses = [
+            FlightResponse(
+                id=flight.id,
+                origin=flight.origin,
+                destination=flight.destination,
+                departure_time=flight.departure_time,
+                arrival_time=flight.arrival_time,
+                airline=flight.airline,
+                status=flight.status,
+                price=int(flight.price)
+            ) for flight in flights
+        ]
+        return flight_responses
 
 
 def create_flight_service(

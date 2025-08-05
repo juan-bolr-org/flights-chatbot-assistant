@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 from fastapi import Depends
 from repository import User, Booking
-from schemas import BookingCreate, BookingUpdate
+from schemas import BookingCreate, BookingUpdate, BookingResponse, FlightResponse
 from repository import BookingRepository, FlightRepository, create_booking_repository, create_flight_repository
 from resources.logging import get_logger
 from exceptions import (
@@ -22,12 +22,12 @@ class BookingService(ABC):
     """Abstract base class for Booking service operations."""
     
     @abstractmethod
-    def create_booking(self, user: User, booking: BookingCreate) -> Booking:
+    def create_booking(self, user: User, booking: BookingCreate) -> BookingResponse:
         """Create a new booking for a user."""
         pass
     
     @abstractmethod
-    def update_booking(self, user: User, booking_id: int, booking_update: BookingUpdate) -> Booking:
+    def update_booking(self, user: User, booking_id: int, booking_update: BookingUpdate) -> BookingResponse:
         """Update a booking for a user."""
         pass
     
@@ -37,7 +37,7 @@ class BookingService(ABC):
         pass
     
     @abstractmethod
-    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[Booking]:
+    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[BookingResponse]:
         """Get all bookings for a user with optional status filter."""
         pass
 
@@ -49,7 +49,31 @@ class BookingBusinessService(BookingService):
         self.booking_repo = booking_repo
         self.flight_repo = flight_repo
     
-    def create_booking(self, user: User, booking: BookingCreate) -> Booking:
+    def _convert_booking_to_response(self, booking: Booking) -> BookingResponse:
+        """Convert Booking model to BookingResponse schema."""
+        # Convert flight to FlightResponse
+        flight_response = FlightResponse(
+            id=booking.flight.id,
+            origin=booking.flight.origin,
+            destination=booking.flight.destination,
+            departure_time=booking.flight.departure_time,
+            arrival_time=booking.flight.arrival_time,
+            airline=booking.flight.airline,
+            status=booking.flight.status,
+            price=booking.flight.price
+        )
+        
+        # Convert booking to BookingResponse
+        return BookingResponse(
+            id=booking.id,
+            flight_id=booking.flight_id,
+            status=booking.status,
+            booked_at=booking.booked_at,
+            cancelled_at=booking.cancelled_at,
+            flight=flight_response
+        )
+    
+    def create_booking(self, user: User, booking: BookingCreate) -> BookingResponse:
         """Create a new booking for a user."""
         logger.debug(f"Creating booking for user {user.id}, flight {booking.flight_id}")
         
@@ -69,9 +93,11 @@ class BookingBusinessService(BookingService):
         new_booking = self.booking_repo.create(user.id, booking.flight_id)
         
         logger.info(f"Successfully created booking {new_booking.id} for user {user.email} on flight {flight.origin} to {flight.destination}")
-        return new_booking
+        
+        # Convert Booking model to BookingResponse schema
+        return self._convert_booking_to_response(new_booking)
     
-    def update_booking(self, user: User, booking_id: int, booking_update: BookingUpdate) -> Booking:
+    def update_booking(self, user: User, booking_id: int, booking_update: BookingUpdate) -> BookingResponse:
         """Update a booking for a user."""
         logger.debug(f"Updating booking {booking_id} for user {user.id} to status {booking_update.status}")
         
@@ -104,7 +130,8 @@ class BookingBusinessService(BookingService):
             updated_booking = self.booking_repo.update_status(booking_id, booking_update.status)
             logger.info(f"User {user.email} updated booking {booking_id} status to {booking_update.status}")
         
-        return updated_booking
+        # Convert Booking model to BookingResponse schema
+        return self._convert_booking_to_response(updated_booking)
     
     def delete_booking(self, user: User, booking_id: int) -> Dict[str, str]:
         """Delete/cancel a booking for a user."""
@@ -138,7 +165,7 @@ class BookingBusinessService(BookingService):
         logger.info(f"User {user.email} successfully deleted/cancelled booking {booking_id} for flight {flight.origin} to {flight.destination}")
         return {"message": "Booking cancelled successfully"}
     
-    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[Booking]:
+    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[BookingResponse]:
         """Get all bookings for a user with optional status filter."""
         logger.debug(f"Retrieving bookings for user {user.id} with status filter: {status}")
         
@@ -147,7 +174,9 @@ class BookingBusinessService(BookingService):
         logger.info(f"Successfully retrieved {len(bookings)} bookings for user {user.email} with status filter: {status}")
         logger.debug(f"Retrieved booking IDs: {[booking.id for booking in bookings]}")
         
-        return bookings
+        # Convert Booking models to BookingResponse schemas
+        booking_responses = [self._convert_booking_to_response(booking) for booking in bookings]
+        return booking_responses
 
 
 def create_booking_service(

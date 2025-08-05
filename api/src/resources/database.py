@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, Engine
 from typing import Optional
 from pydantic import BaseModel, Field
+import os
 
 from models import Base, User
 from .logging import get_logger
@@ -12,7 +13,7 @@ logger = get_logger("database")
 
 class DatabaseConfig(BaseModel):
     """Database configuration with Pydantic validation."""
-    database_url: str = Field(default="sqlite:///./flights.db", description="Main database URL")
+    database_url: str = Field(default=os.environ.get("DATABASE_URL", "sqlite:///./flights.db"), description="Database connection URL")
     check_same_thread: bool = Field(default=False, description="SQLite thread safety setting")
     autocommit: bool = Field(default=False, description="SQLAlchemy autocommit setting")
     autoflush: bool = Field(default=False, description="SQLAlchemy autoflush setting")

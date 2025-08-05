@@ -24,7 +24,7 @@ class FlightResponse(BaseModel):
     arrival_time: datetime.datetime
     airline: str
     status: str
-    price: int  # Changed from float to int to match database model
+    price: float
 
     class Config:
         from_attributes = True

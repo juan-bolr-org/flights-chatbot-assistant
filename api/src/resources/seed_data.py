@@ -91,7 +91,7 @@ class DataSeeder:
                 arrival_time=arrival,
                 airline=self.fake.company(),
                 status="scheduled",
-                price=random.uniform(100, 1000)
+                price=int(random.uniform(100, 1000))
             )
             db.add(flight)
             flights.append(flight)

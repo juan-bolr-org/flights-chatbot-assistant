@@ -15,7 +15,7 @@ from services.booking import BookingBusinessService
 from repository.booking import BookingRepository
 from repository.flight import FlightRepository
 from models import Booking, User, Flight
-from schemas.booking import BookingCreate, BookingUpdate
+from schemas.booking import BookingCreate, BookingUpdate, BookingResponse
 from exceptions import (
     FlightNotAvailableError, 
     BookingAlreadyExistsError, 
@@ -179,9 +179,14 @@ class TestBookingService:
         # Execute
         result = booking_service.create_booking(sample_user, sample_booking_create)
         
-        # Verify
-        assert result == sample_db_booking
+        # Verify - now expecting BookingResponse object
+        assert isinstance(result, BookingResponse)
+        assert result.id == 1
         assert result.status == "booked"
+        assert result.flight_id == 1
+        assert result.flight.id == 1
+        assert result.flight.origin == "New York"
+        assert result.flight.destination == "Los Angeles"
         
         # Verify repository calls
         mock_flight_repo.find_available_by_id.assert_called_once_with(1)
@@ -251,7 +256,8 @@ class TestBookingService:
         # Execute
         result = booking_service.update_booking(sample_user, 1, sample_booking_update_cancel)
         
-        # Verify
+        # Verify - now expecting BookingResponse object
+        assert isinstance(result, BookingResponse)
         assert result.status == "cancelled"
         assert result.cancelled_at is not None
         
@@ -345,7 +351,8 @@ class TestBookingService:
         # Execute
         result = booking_service.update_booking(sample_user, 1, sample_booking_update_pending)
         
-        # Verify
+        # Verify - now expecting BookingResponse object
+        assert isinstance(result, BookingResponse)
         assert result.status == "pending"
         
         # Verify repository calls
@@ -453,9 +460,15 @@ class TestBookingService:
         # Execute
         result = booking_service.get_user_bookings(sample_user)
         
-        # Verify
-        assert result == sample_booking_list
+        # Verify - now expecting BookingResponse objects
+        assert isinstance(result, list)
         assert len(result) == 2
+        assert isinstance(result[0], BookingResponse)
+        assert result[0].id == 1
+        assert result[0].status == "booked"
+        assert isinstance(result[1], BookingResponse)
+        assert result[1].id == 2
+        assert result[1].status == "cancelled"
         
         # Verify repository calls
         mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, None)
@@ -471,9 +484,10 @@ class TestBookingService:
         # Execute
         result = booking_service.get_user_bookings(sample_user, "booked")
         
-        # Verify
-        assert result == booked_bookings
+        # Verify - now expecting BookingResponse objects
+        assert isinstance(result, list)
         assert len(result) == 1
+        assert isinstance(result[0], BookingResponse)
         assert result[0].status == "booked"
         
         # Verify repository calls
@@ -487,8 +501,8 @@ class TestBookingService:
         # Execute
         result = booking_service.get_user_bookings(sample_user)
         
-        # Verify
-        assert result == []
+        # Verify - now expecting empty list of BookingResponse objects
+        assert isinstance(result, list)
         assert len(result) == 0
         
         # Verify repository calls
@@ -505,9 +519,10 @@ class TestBookingService:
         # Execute
         result = booking_service.get_user_bookings(sample_user, "upcoming")
         
-        # Verify
-        assert result == upcoming_bookings
+        # Verify - now expecting BookingResponse objects
+        assert isinstance(result, list)
         assert len(result) == 1
+        assert isinstance(result[0], BookingResponse)
         
         # Verify repository calls
         mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, "upcoming")
