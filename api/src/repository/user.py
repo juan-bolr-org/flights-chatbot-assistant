@@ -87,7 +87,7 @@ class UserSqliteRepository(UserRepository):
     
     def find_expired_tokens(self) -> List[User]:
         """Find all users with expired tokens."""
-        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time = datetime.datetime.now(datetime.UTC)
         return self.db.query(User).filter(
             User.token_expiration.isnot(None),
             User.token_expiration < current_time
