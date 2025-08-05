@@ -18,3 +18,5 @@ colorlog
 pytest
 pytest-mock
 opencensus-ext-azure
+httpx
+pytest-asyncio
