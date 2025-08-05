@@ -8,6 +8,7 @@ export async function getUserBookings(token: string): Promise<Booking[]> {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', // Include cookies in the request
     });
 
     if (!res.ok) {

@@ -4,6 +4,7 @@ from schemas import UserCreate, UserLogin, Token, UserResponse
 from resources.crypto import CryptoManager
 from resources.dependencies import get_crypto_manager
 from repository import UserRepository, create_user_repository
+from repository.user import User
 from resources.logging import get_logger
 from exceptions import EmailAlreadyExistsError, InvalidCredentialsError
 import datetime
@@ -22,6 +23,11 @@ class UserService(ABC):
     @abstractmethod
     def login(self, user: UserLogin) -> UserResponse:
         """Login a user."""
+        pass
+    
+    @abstractmethod
+    def get_current_user_info(self, user: User, access_token: str) -> UserResponse:
+        """Get current user information with existing token."""
         pass
 
 
@@ -77,6 +83,20 @@ class UserBusinessService(UserService):
             email=updated_user.email,
             phone=updated_user.phone,
             created_at=updated_user.created_at,
+            token=Token(access_token=access_token, token_type="bearer")
+        )
+    
+    def get_current_user_info(self, user: User, access_token: str) -> UserResponse:
+        """Get current user information with existing token."""
+        logger.debug(f"Getting current user info for user ID: {user.id}")
+        
+        logger.info(f"Retrieved current user info for user: {user.email} (ID: {user.id})")
+        return UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            phone=user.phone,
+            created_at=user.created_at,
             token=Token(access_token=access_token, token_type="bearer")
         )
 
