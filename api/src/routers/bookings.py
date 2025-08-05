@@ -50,7 +50,9 @@ def update_booking(
         raise HTTPException(
             status_code=500,
             detail=f"Error updating booking: {str(e)}"
-        )@router.delete("/{booking_id}")
+        )
+
+@router.delete("/{booking_id}")
 def delete_booking(
     booking_id: int, 
     current_user: User = Depends(get_current_user), 

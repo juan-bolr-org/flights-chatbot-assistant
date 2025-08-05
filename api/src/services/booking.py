@@ -93,7 +93,7 @@ class BookingBusinessService(BookingService):
                 raise BookingCannotBeCancelledError(booking_id, booking.status)
             
             flight = self.flight_repo.find_by_id(booking.flight_id)
-            if flight.departure_time <= datetime.datetime.now():
+            if flight.departure_time <= datetime.datetime.now(datetime.timezone.utc):
                 logger.warning(f"User {user.email} attempted to cancel past flight booking {booking_id}")
                 raise PastFlightCannotBeCancelledError(booking_id, flight.id)
             
