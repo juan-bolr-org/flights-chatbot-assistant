@@ -1,13 +1,12 @@
-import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
-from models import User
-from .dependencies import get_database_session
 from .chat import ChatManager
 from typing import Generator
 from pydantic import BaseModel, Field
 from .logging import get_logger
+from repository.user import UserRepository, create_user_repository
+from repository import get_database_session
 
 logger = get_logger("scheduler")
 
@@ -45,12 +44,11 @@ class TokenCleanupScheduler:
         db: Session = next(db_generator)
         
         try:
+            # Create user repository instance
+            user_repository: UserRepository = create_user_repository(db)
+            
             # Find users with expired tokens
-            current_time = datetime.datetime.now(datetime.UTC)
-            expired_users = db.query(User).filter(
-                User.token_expiration.isnot(None),
-                User.token_expiration < current_time
-            ).all()
+            expired_users = user_repository.find_expired_tokens()
             
             if not expired_users:
                 logger.info("No expired tokens found")

@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from typing import List
-from models import User, ChatbotMessage
+from fastapi.security import HTTPBearer
+from repository.user import User
 from schemas import ChatRequest, ChatResponse, ChatMessageResponse, ChatHistoryResponse
-from resources.dependencies import get_current_user, get_agent, get_system_context, get_database_session
+from resources.dependencies import get_current_user, get_agent, get_system_context
 from resources.logging import get_logger
-import datetime
+from repository import ChatbotMessageRepository, create_chatbot_message_repository
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 security = HTTPBearer()
@@ -18,7 +16,7 @@ async def chat_endpoint(
     user: User = Depends(get_current_user),
     agent = Depends(get_agent),
     system_context: str = Depends(get_system_context),
-    db: Session = Depends(get_database_session)
+    chat_repo: ChatbotMessageRepository = Depends(create_chatbot_message_repository)
 ):
     try:
         logger.debug(f"Invoking agent for user {user.id}")
@@ -36,15 +34,11 @@ async def chat_endpoint(
         
         # Save the chat message to database
         try:
-            chat_message = ChatbotMessage(
+            chat_message = chat_repo.create(
                 user_id=user.id,
                 message=request.content,
-                response=answer,
-                created_at=datetime.datetime.now(datetime.UTC)
+                response=answer
             )
-            db.add(chat_message)
-            db.commit()
-            db.refresh(chat_message)
             logger.debug(f"Saved chat message {chat_message.id} to database for user {user.id}")
         except Exception as db_error:
             logger.warning(f"Failed to save chat message to database for user {user.email}: {db_error}")
@@ -67,7 +61,7 @@ def get_chat_history(
     limit: int = 50,
     offset: int = 0,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_database_session)
+    chat_repo: ChatbotMessageRepository = Depends(create_chatbot_message_repository)
 ):
     """
     Get chat history for the current user with pagination.
@@ -76,21 +70,17 @@ def get_chat_history(
         logger.debug(f"Retrieving chat history for user {user.id} (limit: {limit}, offset: {offset})")
         
         # Get total count
-        total_count = db.query(ChatbotMessage).filter(ChatbotMessage.user_id == user.id).count()
+        total_count = chat_repo.count_by_user_id(user.id)
         
         # Get messages with pagination, ordered by most recent first
-        messages = db.query(ChatbotMessage).filter(
-            ChatbotMessage.user_id == user.id
-        ).order_by(
-            ChatbotMessage.created_at.desc()
-        ).offset(offset).limit(limit).all()
+        messages = chat_repo.find_by_user_id(user.id, limit=limit, offset=offset)
         
         # Convert to response format
         message_responses = [
             ChatMessageResponse(
                 id=msg.id,
-                message=msg.message,
-                response=msg.response or "",
+                message=msg.user_message,
+                response=msg.bot_response or "",
                 created_at=msg.created_at
             )
             for msg in messages
@@ -113,7 +103,7 @@ def get_chat_history(
 @router.delete("/history")
 def clear_chat_history(
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_database_session)
+    chat_repo: ChatbotMessageRepository = Depends(create_chatbot_message_repository)
 ):
     """
     Clear all chat history for the current user.
@@ -121,15 +111,8 @@ def clear_chat_history(
     try:
         logger.debug(f"Clearing chat history for user {user.id}")
         
-        # Count messages before deletion for logging
-        message_count = db.query(ChatbotMessage).filter(ChatbotMessage.user_id == user.id).count()
-        
         # Delete all chat messages for the user
-        deleted_count = db.query(ChatbotMessage).filter(
-            ChatbotMessage.user_id == user.id
-        ).delete()
-        
-        db.commit()
+        deleted_count = chat_repo.delete_by_user_id(user.id)
         
         logger.info(f"Cleared {deleted_count} chat messages for user {user.email}")
         
@@ -140,7 +123,6 @@ def clear_chat_history(
         
     except Exception as e:
         logger.error(f"Error clearing chat history for user {user.email}: {e}", exc_info=True)
-        db.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Error clearing chat history: {str(e)}"

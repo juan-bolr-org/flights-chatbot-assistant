@@ -1,28 +1,15 @@
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Generator
-from .database import db_manager
 from .chat import chat_manager
 from .crypto import crypto_manager, CryptoManager
 from langchain.chat_models.base import BaseChatModel
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
-from models import User
-
+from repository.user import UserRepository, create_user_repository, User
 
 # Security
 security = HTTPBearer()
-
-
-def get_database_session() -> Generator[Session, None, None]:
-    """Dependency function to get a database session."""
-    db = db_manager.get_session()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 def get_chat_model() -> BaseChatModel:
     """Dependency function to get the chat model."""
@@ -51,7 +38,7 @@ def get_crypto_manager() -> CryptoManager:
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security), 
-    db: Session = Depends(get_database_session)
+    user_repository: UserRepository = Depends(create_user_repository)
 ) -> User:
     """Dependency function to get the current authenticated user."""
     try:
@@ -65,7 +52,7 @@ def get_current_user(
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    user = db.query(User).filter(User.email == email).first()
+    user = user_repository.find_by_email(email)
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     
