@@ -17,8 +17,32 @@ env:
   WEBAPP_NAME: flights-assistant-api  # Nombre de la aplicación web en Azure
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          cd api
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+      
+      - name: Run tests
+        run: |
+          cd api
+          python -m pytest tests
+
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: test  # Only run if tests pass
 
     steps:
       - name: Checkout code
