@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Box,
     TextArea,
@@ -39,6 +39,8 @@ export function ChatPanel({
     const [loading, setLoading] = useState(false);
     const { user } = useUser();
 
+    const bottomRef = useRef<HTMLDivElement | null>(null);
+
     useEffect(() => {
         if (open) {
             setMessageCount(0);
@@ -49,7 +51,11 @@ export function ChatPanel({
         if (messages[messages.length - 1].role === 'bot' && !open) {
             setMessageCount(messageCount + 1);
         }
+    }, [messages]);
 
+    // Scroll automático al final
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
     const handleSend = async () => {
@@ -61,7 +67,6 @@ export function ChatPanel({
         setLoading(true);
 
         try {
-            console.log("user", user);
             if (user && user.token) {
                 const botResponse = await sendChatMessage(user.token.access_token, userMessage.content);
                 const botMessage: Message = { role: 'bot', content: botResponse };
@@ -120,9 +125,10 @@ export function ChatPanel({
                             <Text size="2">{msg.content}</Text>
                         </Box>
                     ))}
+                    {/* Este div invisible permite hacer scroll automático al fondo */}
+                    <div ref={bottomRef} />
                 </Flex>
             </ScrollArea>
-
 
             {user ? (
                 <Flex mt="3" gap="2" align="center">
@@ -130,6 +136,12 @@ export function ChatPanel({
                         placeholder="Write your message..."
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
                         style={{ flex: 1 }}
                     />
                     <Button size="2" onClick={handleSend} disabled={loading}>
@@ -137,7 +149,7 @@ export function ChatPanel({
                     </Button>
                 </Flex>
             ) : (
-                <Callout.Root color="orange">
+                <Callout.Root color="orange" mt="3">
                     <Callout.Icon>
                         <AlertCircleIcon />
                     </Callout.Icon>
@@ -146,7 +158,6 @@ export function ChatPanel({
                     </Callout.Text>
                 </Callout.Root>
             )}
-
         </Flex>
     );
 }
