@@ -377,29 +377,6 @@ def create_chatbot_tools(user_token: str, user_id: int, api_base_url: str) -> Li
     ]
 
 
-def create_retriever_tool_from_docs(flight_docs_path: str):
-    """Create and return a retriever tool from flight documents."""
-    try:
-        with open(flight_docs_path, "rb") as f:
-            flight_splits = pickle.load(f)
-
-        vectorstore = InMemoryVectorStore.from_documents(
-            documents=flight_splits, embedding=OpenAIEmbeddings()
-        )
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 30})
-
-        retriever_tool = create_retriever_tool(
-            retriever,
-            "flight_faqs",
-            "Search through flight documentation and FAQ information. Use this for general flight policies, procedures, baggage rules, check-in information, and other flight-related documentation that users might ask about.",
-        )
-        
-        return retriever_tool
-    except Exception as e:
-        print(f"Error creating retriever tool: {e}")
-        return None
-
-
 def create_faqs_retriever_tool():
     """Create and return a retriever tool for airline FAQs."""
     faqs = [
@@ -412,7 +389,15 @@ def create_faqs_retriever_tool():
         "Are pets allowed on board? Small pets are allowed in the cabin with prior reservation. Larger pets must travel in the cargo hold.",
         "Do you offer special assistance for passengers with reduced mobility? Yes, please contact our support team at least 48 hours before your flight to arrange assistance.",
         "Can I select my seat in advance? Yes, seat selection is available during booking and online check-in, subject to availability.",
-        "What is the policy for unaccompanied minors? Children aged 5-12 can travel alone with our unaccompanied minor service. Additional fees apply."
+        "What is the policy for unaccompanied minors? Children aged 5-12 can travel alone with our unaccompanied minor service. Additional fees apply.",
+        # Answers to chatbot capabilities
+        "What can I ask the chatbot? You can ask about flight availability, booking flights, checking your bookings, cancelling flights, and general airline FAQs.",
+        "Can I book a flight through the chatbot? Yes, you can book flights by providing the flight ID and confirming your booking.",
+        "How do I cancel a booking using the chatbot? You can cancel a booking by providing the booking ID and confirming the cancellation.",
+        "Can the chatbot help me find flights? Yes, you can search for flights by providing the origin, destination, and departure date.",
+        "How do I check my bookings with the chatbot? You can retrieve your bookings by asking for your flight reservations, optionally filtering by status.",
+        "What information do I need to book a flight? You need the flight ID to book a flight through the chatbot.",
+        "Can I change my booking status using the chatbot? Yes, you can update your booking status to cancelled or other statuses as needed.",
     ]
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=200, chunk_overlap=20
