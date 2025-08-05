@@ -3,18 +3,18 @@ name: Frontend Build/Push Docker Image and Deploy to Azure Web App
 on:
   push:
     branches:
-      - main  # o la rama que estés usando
+      - main  # trigger on main branch changes
     paths:
-      - 'frontend/**'  # Solo se activa si hay cambios en el directorio backend
-      - .github/workflows/flights-assistant-frontend.yml  # Asegúrate de que el workflow se active con cambios en este archivo
+      - 'frontend/**'  # only trigger on frontend directory changes
+      - .github/workflows/flights-assistant-frontend.yml  # include workflow file changes
 
 permissions:
       id-token: write
       contents: read      
 
 env:
-  IMAGE_NAME: flights-frontend  # Nombre de la imagen (sin el registro)
-  WEBAPP_NAME: flights-assistant-frontend  # Nombre de la aplicación web en Azure
+  IMAGE_NAME: flights-frontend  # container image name without registry prefix
+  WEBAPP_NAME: flights-assistant-frontend  # target Azure Web App name
 
 jobs:
   build-and-deploy:
