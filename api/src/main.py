@@ -55,3 +55,8 @@ app.include_router(health_check_router)
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Flights Chatbot Assistant API v2"}
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    uvicorn.run(app, host="0.0.0", port=os.getenv("PORT", 8000), log_level="info")

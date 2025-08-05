@@ -1,8 +1,10 @@
+from collections.abc import Generator
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, Engine
-from models import Base, User
 from typing import Optional
 from pydantic import BaseModel, Field
+
+from models import Base, User
 from .logging import get_logger
 
 logger = get_logger("database")
@@ -89,3 +91,11 @@ class DatabaseManager:
 
 # Global instance - Singleton pattern
 db_manager = DatabaseManager()
+
+def get_database_session() -> Generator[Session, None, None]:
+    """Dependency function to get a database session."""
+    db = db_manager.get_session()
+    try:
+        yield db
+    finally:
+        db.close()

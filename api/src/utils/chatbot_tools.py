@@ -257,7 +257,7 @@ class GetUserBookingsTool(BaseTool):
                     params["status"] = status
                     
                 response = await client.get(
-                    f"{self.api_base_url}/bookings/user/{self.user_id}",
+                    f"{self.api_base_url}/bookings/user",
                     params=params,
                     headers={"Authorization": f"Bearer {self.user_token}"}
                 )

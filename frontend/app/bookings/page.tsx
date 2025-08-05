@@ -30,9 +30,8 @@ export default function BookingsPage() {
                     router.replace('/login');
                     return;
                 }
-                const userId = user.id;
                 if (user.token) {
-                    const result = await getUserBookings(userId.toString(), user.token?.access_token);
+                    const result = await getUserBookings(user.token?.access_token);
                     setBookings(result);
                 } else {
                     setError('User token is missing. Please log in again.');

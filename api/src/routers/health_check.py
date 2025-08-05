@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from resources.app_resources import app_resources, AppResources
 from resources.dependencies import (
-    get_database_session, 
     get_crypto_manager, 
     get_chat_model, 
     get_chat_memory
 )
+from resources.database import get_database_session
 from resources.logging import get_logger
 from resources.crypto import CryptoManager
 from sqlalchemy.orm import Session
