@@ -1,4 +1,3 @@
-import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
@@ -7,6 +6,7 @@ from typing import Generator
 from pydantic import BaseModel, Field
 from .logging import get_logger
 from repository.user import UserRepository, create_user_repository
+from repository import get_database_session
 
 logger = get_logger("scheduler")
 

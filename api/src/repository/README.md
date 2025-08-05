@@ -15,7 +15,7 @@ The repository pattern has been implemented to separate data access logic from b
 
 The repository module is located at `api/src/repository/` and contains:
 
-```
+```bash
 repository/
 ├── __init__.py              # Module exports
 ├── user.py                  # User entity repository
