@@ -1,0 +1,670 @@
+#!/usr/bin/env python3
+"""
+Flights API Helper Tool
+======================
+
+A comprehensive development assistant for the Flights API project.
+This tool helps manage the development environment, run tasks, and configure settings.
+
+Usage:
+    ./helper                    - Interactive mode
+    ./helper run               - Run the API server
+    ./helper test              - Run tests
+    ./helper install           - Install/check dependencies
+    ./helper deps              - Install/check dependencies
+    ./helper env               - Configure environment variables
+    ./helper shell             - Open shell in virtual environment
+    ./helper --help            - Show this help
+
+Features:
+- Auto-detects and activates virtual environment
+- Automatic dependency checking and installation
+- Environment variable management with SQLite storage
+- Load environment variables from OS
+- Enhanced interactive menus (auto-installs simple-term-menu)
+- Development task automation
+
+Requirements:
+- Must be run from within the project virtual environment
+- Automatically installs simple-term-menu for enhanced menus
+"""
+
+import os
+import sys
+import subprocess
+import argparse
+import sqlite3
+import json
+import importlib
+import importlib.util
+from pathlib import Path
+from typing import Dict, Optional, List
+import getpass
+
+try:
+    from simple_term_menu import TerminalMenu
+    HAS_TERM_MENU = True
+except ImportError:
+    HAS_TERM_MENU = False
+
+
+class HelperConfig:
+    """Manages helper configuration using SQLite."""
+    
+    def __init__(self, db_path: str = ".helper.db"):
+        self.db_path = db_path
+        self.init_db()
+    
+    def init_db(self):
+        """Initialize the configuration database."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS env_vars (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                description TEXT,
+                is_secret BOOLEAN DEFAULT FALSE
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        conn.close()
+    
+    def set_env_var(self, key: str, value: str, description: str = "", is_secret: bool = False):
+        """Store an environment variable."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO env_vars (key, value, description, is_secret)
+            VALUES (?, ?, ?, ?)
+        """, (key, value, description, is_secret))
+        conn.commit()
+        conn.close()
+    
+    def get_env_var(self, key: str) -> Optional[str]:
+        """Get an environment variable."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM env_vars WHERE key = ?", (key,))
+        result = cursor.fetchone()
+        conn.close()
+        return result[0] if result else None
+    
+    def get_all_env_vars(self) -> Dict[str, Dict]:
+        """Get all environment variables."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT key, value, description, is_secret FROM env_vars")
+        results = cursor.fetchall()
+        conn.close()
+        
+        return {
+            row[0]: {
+                'value': row[1],
+                'description': row[2],
+                'is_secret': bool(row[3])
+            }
+            for row in results
+        }
+    
+    def delete_env_var(self, key: str):
+        """Delete an environment variable."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM env_vars WHERE key = ?", (key,))
+        conn.commit()
+        conn.close()
+    
+    def load_from_os_env(self):
+        """Load application-relevant environment variables from OS environment."""
+        # Define application-relevant environment variables
+        app_env_vars = {
+            # Core application
+            'PORT', 'SECRET_KEY', 'DATABASE_URL',
+            # OpenAI/LLM
+            'OPENAI_API_KEY', 'OPENAI_MODEL', 'OPENAI_BASE_URL',
+            # Logging
+            'LOG_LEVEL', 'LOG_FILE', 'ERROR_LOG_FILE', 'MAX_LOG_FILE_SIZE', 'LOG_JSON_FORMAT',
+            # Azure Application Insights
+            'APPINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATION_KEY',
+            # FastAPI/Uvicorn
+            'UVICORN_HOST', 'UVICORN_PORT', 'UVICORN_LOG_LEVEL', 'RELOAD',
+            # Development/Debug
+            'DEBUG', 'ENVIRONMENT', 'ENV', 'NODE_ENV',
+        }
+        
+        loaded_count = 0
+        for key, value in os.environ.items():
+            # Only load if it's in our application-relevant list or matches common patterns
+            if (key in app_env_vars or 
+                key.endswith(('_API_KEY', '_SECRET', '_SECRET_KEY', '_TOKEN', '_PASSWORD', '_KEY', '_URL', '_DSN')) or
+                key.startswith(('API_', 'SECRET_', 'KEY_', 'TOKEN_', 'OPENAI_', 'AZURE_', 'AWS_', 'GCP_'))):
+                
+                # Check if it's already stored
+                existing = self.get_env_var(key)
+                if existing is None:
+                    is_secret = any(secret_word in key.upper() for secret_word in ['SECRET', 'KEY', 'PASSWORD', 'TOKEN', 'API'])
+                    self.set_env_var(key, value, f"Loaded from OS environment", is_secret)
+                    loaded_count += 1
+        
+        return loaded_count
+
+
+class FlightsAPIHelper:
+    """Main helper class for the Flights API project."""
+    
+    def __init__(self):
+        self.project_root = Path(__file__).parent.absolute()
+        self.venv_path = self.project_root / "venv"
+        self.python_exe = self.get_python_executable()
+        self.config = HelperConfig()
+        self._term_menu_install_asked = False  # Track if we've asked about installing simple-term-menu
+        
+        # Default environment variables
+        self.default_env_vars = {
+            'PORT': {'value': '8000', 'description': 'API server port'},
+            'SECRET_KEY': {'value': '', 'description': 'JWT secret key', 'is_secret': True},
+            'OPENAI_API_KEY': {'value': '', 'description': 'OpenAI API key for chatbot', 'is_secret': True},
+            'APPINSIGHTS_CONNECTION_STRING': {'value': '', 'description': 'Azure Application Insights connection string', 'is_secret': True},
+        }
+    
+    def ensure_term_menu_available(self):
+        """Ensure simple-term-menu is available, install if missing and relaunch."""
+        global HAS_TERM_MENU
+        
+        # Don't try again if we've already tried
+        if self._term_menu_install_asked:
+            return
+            
+        self._term_menu_install_asked = True
+        
+        if not HAS_TERM_MENU:
+            try:
+                print("📦 Installing simple-term-menu for enhanced menus...")
+                subprocess.run([
+                    self.python_exe, "-m", "pip", "install", "simple-term-menu"
+                ], cwd=self.project_root, check=True, capture_output=True, text=True)
+                
+                print("✅ simple-term-menu installed successfully!")
+                print("🔄 Relaunching helper with enhanced menus...")
+                
+                # Relaunch the script to properly import the new package
+                env = os.environ.copy()
+                env['HELPER_TERM_MENU_INSTALLED'] = '1'
+                os.execve(self.python_exe, [self.python_exe, __file__] + sys.argv[1:], env)
+                
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Could not install simple-term-menu: {e}")
+                print("� Helper requires simple-term-menu for operation.")
+                sys.exit(1)
+            except Exception as e:
+                print(f"⚠️  Error during simple-term-menu setup: {e}")
+                print("� Helper requires simple-term-menu for operation.")
+                sys.exit(1)
+    
+    def get_python_executable(self) -> str:
+        """Get the Python executable path, preferring virtual environment."""
+        if self.venv_path.exists():
+            if os.name == 'nt':  # Windows
+                return str(self.venv_path / "Scripts" / "python.exe")
+            else:  # Unix-like
+                return str(self.venv_path / "bin" / "python")
+        return sys.executable
+    
+    def is_in_venv(self) -> bool:
+        """Check if currently running in the project's virtual environment."""
+        return sys.executable == self.python_exe
+    
+    def check_dependencies(self) -> Dict[str, bool]:
+        """Check which dependencies are installed by trying to import them."""
+        dependencies = {}
+        
+        # Map package names to import names
+        package_import_map = {
+            'fastapi': 'fastapi',
+            'uvicorn[standard]': 'uvicorn',
+            'uvicorn': 'uvicorn',
+            'sqlalchemy': 'sqlalchemy',
+            'pydantic': 'pydantic',
+            'python-jose': 'jose',
+            'passlib[bcrypt]': 'passlib',
+            'passlib': 'passlib',
+            'faker': 'faker',
+            'langchain': 'langchain',
+            'langchain_core': 'langchain_core',
+            'langchain-openai': 'langchain_openai',
+            'numpy': 'numpy',
+            'httpx': 'httpx',
+            'aiohttp': 'aiohttp',
+            'langgraph': 'langgraph',
+            'apscheduler': 'apscheduler',
+            'colorlog': 'colorlog',
+            'pytest': 'pytest',
+            'pytest-mock': 'pytest_mock',
+            'pytest-asyncio': 'pytest_asyncio',
+            'pytest-cov': 'pytest_cov',
+            'opencensus-ext-azure': 'opencensus.ext.azure'
+        }
+        
+        # Read requirements files
+        req_files = ['requirements.txt', 'requirements-test.txt']
+        all_packages = set()
+        
+        for req_file in req_files:
+            req_path = self.project_root / req_file
+            if req_path.exists():
+                with open(req_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            # Extract package name (before ==, >=, etc.)
+                            package = line.split('==')[0].split('>=')[0].split('<=')[0].split('[')[0]
+                            all_packages.add(package)
+        
+        # Check each package
+        for package in all_packages:
+            import_name = package_import_map.get(package, package.replace('-', '_'))
+            try:
+                importlib.import_module(import_name)
+                dependencies[package] = True
+            except ImportError:
+                dependencies[package] = False
+        
+        return dependencies
+    
+    def install_missing_dependencies(self):
+        """Install any missing dependencies."""
+        print("🔍 Checking dependencies...")
+        
+        missing_deps = []
+        deps_status = self.check_dependencies()
+        
+        for package, is_installed in deps_status.items():
+            if not is_installed:
+                missing_deps.append(package)
+        
+        if not missing_deps:
+            print("✅ All dependencies are installed!")
+            return True
+        
+        print(f"📦 Found {len(missing_deps)} missing dependencies:")
+        for dep in missing_deps:
+            print(f"  - {dep}")
+        
+        try:
+            # Install missing dependencies
+            for req_file in ['requirements.txt', 'requirements-test.txt']:
+                req_path = self.project_root / req_file
+                if req_path.exists():
+                    print(f"📥 Installing from {req_file}...")
+                    subprocess.run([
+                        self.python_exe, "-m", "pip", "install", "-r", str(req_path)
+                    ], cwd=self.project_root, check=True)
+            
+            print("✅ Dependencies installed successfully!")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to install dependencies: {e}")
+            return False
+    
+    def relaunch_in_venv(self, args: List[str]):
+        """Relaunch the script in the virtual environment."""
+        if not self.venv_path.exists():
+            print("❌ Virtual environment not found. Creating one...")
+            self.create_venv()
+        
+        print(f"🔄 Relaunching in virtual environment: {self.python_exe}")
+        
+        # Check and install dependencies after relaunching
+        env = os.environ.copy()
+        env['HELPER_CHECK_DEPS'] = '1'
+        
+        os.execve(self.python_exe, [self.python_exe, __file__] + args, env)
+    
+    def interactive_select(self, options: List[str], prompt: str = "Please select an option") -> Optional[int]:
+        """Interactive menu selection using simple-term-menu."""
+        if not options:
+            return None
+        
+        # Ensure simple-term-menu is available
+        if not HAS_TERM_MENU and self.is_in_venv():
+            self.ensure_term_menu_available()
+            # If we reach here, installation failed and we exited
+        
+        # simple-term-menu should be available now
+        if not HAS_TERM_MENU:
+            print("❌ simple-term-menu is required for this helper tool.")
+            print("💡 Please run this helper from within the virtual environment.")
+            sys.exit(1)
+        
+        try:
+            terminal_menu = TerminalMenu(
+                options,
+                title=prompt,
+                menu_cursor="▶ ",
+                menu_cursor_style=("fg_red", "bold"),
+                menu_highlight_style=("bg_red", "fg_yellow"),
+                cycle_cursor=True,
+                clear_screen=False,
+            )
+            choice_idx = terminal_menu.show()
+            return choice_idx  # Returns None if cancelled (ESC/Ctrl+C)
+        except Exception as e:
+            print(f"❌ Terminal menu failed: {e}")
+            print("🛑 Helper requires simple-term-menu for operation.")
+            sys.exit(1)
+    
+    def create_venv(self):
+        """Create a virtual environment."""
+        print("📦 Creating virtual environment...")
+        subprocess.run([sys.executable, "-m", "venv", "venv"], cwd=self.project_root, check=True)
+        print("✅ Virtual environment created successfully!")
+        
+        # Install dependencies
+        self.install_dependencies()
+    
+    def install_dependencies(self):
+        """Install project dependencies."""
+        return self.install_missing_dependencies()
+    
+    def run_server(self):
+        """Run the API server with environment variables."""
+        print("🚀 Starting Flights API server...")
+        
+        # Load environment variables
+        env = os.environ.copy()
+        for key, data in self.config.get_all_env_vars().items():
+            env[key] = data['value']
+        
+        # Run uvicorn
+        cmd = [
+            self.python_exe, "-m", "uvicorn",
+            "--app-dir", "src",
+            "main:app",
+            "--host", "0.0.0.0",
+            "--port", env.get('PORT', '8000'),
+            "--reload"
+        ]
+        
+        try:
+            subprocess.run(cmd, cwd=self.project_root, env=env)
+        except KeyboardInterrupt:
+            print("\n🛑 Server stopped by user")
+    
+    def run_tests(self):
+        """Run the test suite."""
+        print("🧪 Running test suite...")
+        
+        try:
+            result = subprocess.run([
+                self.python_exe, "-m", "pytest", "tests", "-v"
+            ], cwd=self.project_root)
+            
+            if result.returncode == 0:
+                print("✅ All tests passed!")
+            else:
+                print("❌ Some tests failed!")
+                sys.exit(result.returncode)
+        except KeyboardInterrupt:
+            print("\n🛑 Tests interrupted by user")
+    
+    def open_shell(self):
+        """Open a shell in the virtual environment."""
+        print(f"🐚 Opening shell in virtual environment...")
+        print(f"Virtual env: {self.venv_path}")
+        print("Type 'exit' to return to normal shell")
+        
+        # Set up environment
+        env = os.environ.copy()
+        env['VIRTUAL_ENV'] = str(self.venv_path)
+        env['PATH'] = f"{self.venv_path / 'bin'}:{env['PATH']}"
+        
+        # Load configured environment variables
+        for key, data in self.config.get_all_env_vars().items():
+            env[key] = data['value']
+        
+        shell = env.get('SHELL', '/bin/bash')
+        subprocess.run([shell], cwd=self.project_root, env=env)
+    
+    def configure_env_vars(self):
+        """Interactive environment variable configuration."""
+        print("\n🔧 Environment Variable Configuration")
+        print("=" * 40)
+        
+        options = [
+            "View current variables",
+            "Set/Update variable", 
+            "Delete variable",
+            "Load defaults",
+            "Load from OS environment",
+            "Export to .env file",
+            "Back to main menu"
+        ]
+        
+        while True:
+            choice_idx = self.interactive_select(options, "Environment variable options")
+            
+            if choice_idx is None or choice_idx == 6:  # Back to main menu
+                break
+            elif choice_idx == 0:  # View current variables
+                self.show_env_vars()
+            elif choice_idx == 1:  # Set/Update variable
+                self.set_env_var_interactive()
+            elif choice_idx == 2:  # Delete variable
+                self.delete_env_var_interactive()
+            elif choice_idx == 3:  # Load defaults
+                self.load_default_env_vars()
+            elif choice_idx == 4:  # Load from OS environment
+                self.load_from_os_env_interactive()
+            elif choice_idx == 5:  # Export to .env file
+                self.export_env_file()
+    
+    def show_env_vars(self):
+        """Display current environment variables."""
+        vars_dict = self.config.get_all_env_vars()
+        
+        if not vars_dict:
+            print("\n📝 No environment variables configured.")
+            return
+        
+        print("\n📝 Current Environment Variables:")
+        print("-" * 50)
+        
+        for key, data in vars_dict.items():
+            value = data['value']
+            if data['is_secret'] and value:
+                value = '*' * 8
+            
+            print(f"  {key}: {value}")
+            if data['description']:
+                print(f"    Description: {data['description']}")
+            print()
+    
+    def set_env_var_interactive(self):
+        """Interactive environment variable setting."""
+        key = input("\nVariable name: ").strip().upper()
+        if not key:
+            print("❌ Variable name cannot be empty.")
+            return
+        
+        current = self.config.get_env_var(key)
+        if current:
+            print(f"Current value: {'*' * 8 if 'SECRET' in key or 'KEY' in key else current}")
+        
+        value = input("New value: ").strip()
+        description = input("Description (optional): ").strip()
+        
+        is_secret = 'SECRET' in key or 'KEY' in key or 'PASSWORD' in key
+        if not is_secret:
+            is_secret_input = input("Is this a secret? (y/N): ").strip().lower()
+            is_secret = is_secret_input in ['y', 'yes']
+        
+        self.config.set_env_var(key, value, description, is_secret)
+        print(f"✅ Variable '{key}' saved successfully!")
+    
+    def delete_env_var_interactive(self):
+        """Interactive environment variable deletion."""
+        vars_dict = self.config.get_all_env_vars()
+        
+        if not vars_dict:
+            print("\n📝 No environment variables to delete.")
+            return
+        
+        options = list(vars_dict.keys())
+        choice_idx = self.interactive_select(options, "Select variable to delete")
+        
+        if choice_idx is not None:
+            key = options[choice_idx]
+            confirm_options = ["Yes, delete it", "No, cancel"]
+            confirm_idx = self.interactive_select(confirm_options, f"Delete '{key}'?")
+            
+            if confirm_idx == 0:  # Yes
+                self.config.delete_env_var(key)
+                print(f"✅ Variable '{key}' deleted successfully!")
+            else:
+                print("❌ Deletion cancelled.")
+    
+    def load_default_env_vars(self):
+        """Load default environment variables."""
+        print("\n📥 Loading default environment variables...")
+        
+        for key, data in self.default_env_vars.items():
+            current = self.config.get_env_var(key)
+            if not current:
+                self.config.set_env_var(
+                    key, 
+                    data['value'], 
+                    data['description'], 
+                    data.get('is_secret', False)
+                )
+                print(f"  ✅ Added: {key}")
+            else:
+                print(f"  ⏭️  Skipped: {key} (already exists)")
+        
+        print("✅ Default variables loaded!")
+    
+    def load_from_os_env_interactive(self):
+        """Interactive OS environment loading."""
+        print("\n🌍 Loading environment variables from OS...")
+        
+        loaded_count = self.config.load_from_os_env()
+        
+        if loaded_count > 0:
+            print(f"✅ Loaded {loaded_count} new environment variables from OS!")
+        else:
+            print("ℹ️  No new environment variables found in OS (or all already exist).")
+    
+    def export_env_file(self):
+        """Export environment variables to .env file."""
+        env_file = self.project_root / ".env"
+        
+        vars_dict = self.config.get_all_env_vars()
+        if not vars_dict:
+            print("❌ No environment variables to export.")
+            return
+        
+        with open(env_file, 'w') as f:
+            f.write("# Flights API Environment Variables\n")
+            f.write("# Generated by helper tool\n\n")
+            
+            for key, data in vars_dict.items():
+                if data['description']:
+                    f.write(f"# {data['description']}\n")
+                f.write(f"{key}={data['value']}\n\n")
+        
+        print(f"✅ Environment variables exported to {env_file}")
+    
+    def interactive_mode(self):
+        """Interactive mode with menu."""
+        print("\n🛠️  Flights API Helper Tool")
+        print("=" * 30)
+        
+        options = [
+            "Run API server",
+            "Run tests", 
+            "Install/Check dependencies",
+            "Configure environment variables",
+            "Open shell in virtual environment",
+            "Create/recreate virtual environment",
+            "Exit"
+        ]
+        
+        while True:
+            choice_idx = self.interactive_select(options, "What would you like to do?")
+            
+            if choice_idx is None or choice_idx == 6:  # Exit
+                print("👋 Goodbye!")
+                break
+            elif choice_idx == 0:  # Run API server
+                self.run_server()
+            elif choice_idx == 1:  # Run tests
+                self.run_tests()
+            elif choice_idx == 2:  # Install/Check dependencies
+                self.install_dependencies()
+            elif choice_idx == 3:  # Configure environment variables
+                self.configure_env_vars()
+            elif choice_idx == 4:  # Open shell in virtual environment
+                self.open_shell()
+            elif choice_idx == 5:  # Create/recreate virtual environment
+                self.create_venv()
+
+
+def main():
+    """Main entry point."""
+    helper = FlightsAPIHelper()
+    
+    # Check if we're in the virtual environment
+    if not helper.is_in_venv():
+        helper.relaunch_in_venv(sys.argv[1:])
+        return
+    
+    # Check dependencies after being relaunched in venv
+    if os.environ.get('HELPER_CHECK_DEPS') == '1':
+        print("🔍 Checking dependencies after venv setup...")
+        helper.install_missing_dependencies()
+        # Remove the flag
+        if 'HELPER_CHECK_DEPS' in os.environ:
+            del os.environ['HELPER_CHECK_DEPS']
+    
+    # Check if we just installed simple-term-menu and show a message
+    if os.environ.get('HELPER_TERM_MENU_INSTALLED') == '1':
+        print("✨ simple-term-menu is now available! Enjoy the enhanced menus.")
+        # Remove the flag
+        if 'HELPER_TERM_MENU_INSTALLED' in os.environ:
+            del os.environ['HELPER_TERM_MENU_INSTALLED']
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Flights API Helper Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__
+    )
+    
+    parser.add_argument('command', nargs='?', choices=[
+        'run', 'test', 'install', 'env', 'shell', 'deps'
+    ], help='Command to execute')
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        helper.interactive_mode()
+    elif args.command == 'run':
+        helper.run_server()
+    elif args.command == 'test':
+        helper.run_tests()
+    elif args.command in ['install', 'deps']:
+        helper.install_dependencies()
+    elif args.command == 'env':
+        helper.configure_env_vars()
+    elif args.command == 'shell':
+        helper.open_shell()
+
+
+if __name__ == "__main__":
+    main()
