@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { login } from '@/lib/api/auth';
+import { setCookie } from '@/lib/utils/cookies';
 import {
   Button,
   TextField,
@@ -63,6 +64,9 @@ function LoginForm() {
 
       if (result) {
         if (result.token && result.token.access_token) {
+          // Manually set the cookie client-side to ensure it's immediately available
+          setCookie('access_token', result.token.access_token, 7);
+          
           // Update user context
           setUser({ 
             name: result.name, 

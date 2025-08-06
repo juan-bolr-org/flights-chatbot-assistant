@@ -28,14 +28,12 @@ export function useAuthRedirect() {
 
   const redirectAfterLogin = () => {
     const redirectPath = searchParams.get('redirect');
+    const targetPath = (redirectPath && redirectPath !== '/login') ? redirectPath : '/flights';
     
-    if (redirectPath && redirectPath !== '/login') {
-      console.log(`Redirecting to: ${redirectPath}`);
-      router.push(redirectPath);
-    } else {
-      console.log('Redirecting to default page: /flights');
-      router.push('/flights');
-    }
+    console.log(`Redirecting to: ${targetPath}`);
+    
+    // Use window.location.href for full page reload to ensure middleware sees the cookie
+    window.location.href = targetPath;
   };
 
   return { redirectAfterLogin };

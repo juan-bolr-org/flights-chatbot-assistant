@@ -42,8 +42,12 @@ export const isProtectedRoute = (pathname: string): boolean => {
 };
 
 export const isPublicRoute = (pathname: string): boolean => {
-  return PUBLIC_ROUTES.includes(pathname as any) || 
-         pathname.startsWith('/register');
+  return PUBLIC_ROUTES.some(route => {
+    if (route === '/') {
+      return pathname === '/';
+    }
+    return pathname === route || pathname.startsWith(route + '/');
+  });
 };
 
 export const isAuthRoute = (pathname: string): boolean => {
