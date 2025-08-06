@@ -4,6 +4,8 @@ import "@radix-ui/themes/styles.css";
 
 import { Theme, Flex, Container } from "@radix-ui/themes";
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { TokenManager } from '@/components/auth/TokenManager';
+import { TokenDebugInfo } from '@/components/auth/TokenDebugInfo';
 import { Inter } from "next/font/google";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -23,6 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Footer />
             </Flex>
             <FloatingChatButton />
+            <TokenManager />
+            <TokenDebugInfo />
           </Providers>
         </Theme>
       </body>

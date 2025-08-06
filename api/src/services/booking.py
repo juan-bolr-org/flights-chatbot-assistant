@@ -119,7 +119,9 @@ class BookingBusinessService(BookingService):
                 raise BookingCannotBeCancelledError(booking_id, booking.status)
             
             flight = self.flight_repo.find_by_id(booking.flight_id)
-            if flight.departure_time <= datetime.datetime.now(datetime.timezone.utc):
+            # Ensure timezone-aware comparison by treating departure_time as UTC
+            departure_time_utc = flight.departure_time.replace(tzinfo=datetime.timezone.utc) if flight.departure_time.tzinfo is None else flight.departure_time
+            if departure_time_utc <= datetime.datetime.now(datetime.timezone.utc):
                 logger.warning(f"User {user.email} attempted to cancel past flight booking {booking_id}")
                 raise PastFlightCannotBeCancelledError(booking_id, flight.id)
             
@@ -154,7 +156,9 @@ class BookingBusinessService(BookingService):
             raise BookingCannotBeCancelledError(booking_id, booking.status)
         
         flight = self.flight_repo.find_by_id(booking.flight_id)
-        if flight.departure_time <= datetime.datetime.now(datetime.timezone.utc):
+        # Ensure timezone-aware comparison by treating departure_time as UTC
+        departure_time_utc = flight.departure_time.replace(tzinfo=datetime.timezone.utc) if flight.departure_time.tzinfo is None else flight.departure_time
+        if departure_time_utc <= datetime.datetime.now(datetime.timezone.utc):
             logger.warning(f"User {user.email} attempted to delete past flight booking {booking_id}")
             raise PastFlightCannotBeCancelledError(booking_id, flight.id)
         

@@ -17,6 +17,7 @@ import {
 } from '@radix-ui/themes';
 import { EnvelopeClosedIcon, LockClosedIcon } from '@radix-ui/react-icons';
 import { useUser } from '@/context/UserContext';
+import { useAuthRedirect, useRedirectIfAuthenticated } from '@/lib/hooks/useAuthRedirect';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email' }),
@@ -27,7 +28,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, setUser } = useUser();
+  const { user, setUser, loading } = useUser();
+  const { redirectAfterLogin } = useAuthRedirect();
+  
+  // Redirect if already authenticated
+  useRedirectIfAuthenticated(user, loading);
+  
   const {
     register,
     handleSubmit,
@@ -38,9 +44,15 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  if (user?.token) {
-    router.push('/');
-    return null;
+  // Show loading while checking authentication status
+  if (loading) {
+    return (
+      <Flex justify="center" align="center" px="4" py="100px">
+        <Box className="bg-white shadow-md rounded-xl p-6 w-full max-w-sm">
+          <Text align="center">Loading...</Text>
+        </Box>
+      </Flex>
+    );
   }
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -50,17 +62,24 @@ export default function LoginPage() {
 
       if (result) {
         if (result.token && result.token.access_token) {
-          localStorage.setItem('token', result.token.access_token);
-          localStorage.setItem('user', JSON.stringify({ name: result.name, email: result.email, id: result.id }));
-          setUser({ name: result.name, email: result.email, id: result.id, token: result.token });
-          router.push('/');
+          // Update user context
+          setUser({ 
+            name: result.name, 
+            email: result.email, 
+            id: result.id, 
+            token: result.token 
+          });
+          
+          // Redirect to intended page or default
+          redirectAfterLogin();
         } else {
           setError('root', { message: 'Invalid credentials. Please try again.' });
         }
       } else {
         setError('root', { message: 'Invalid credentials. Please try again.' });
       }
-    } catch {
+    } catch (error) {
+      console.error('Login error:', error);
       setError('root', { message: 'Something went wrong. Please try again.' });
     }
   };

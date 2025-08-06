@@ -1,15 +1,39 @@
 'use client';
 
 import { Booking } from '@/lib/types/booking';
-import { Card, Flex, Text, Box, Badge } from '@radix-ui/themes';
+import { Card, Flex, Text, Box, Badge, Button, AlertDialog } from '@radix-ui/themes';
 import { formatDate } from '@/lib/utils/date';
+import { useState } from 'react';
+import { useToken } from '@/context/UserContext';
+import { cancelBooking } from '@/lib/api/booking';
 
 interface BookingCardProps {
     booking: Booking;
+    onBookingUpdate?: (updatedBooking: Booking) => void;
 }
 
-export function BookingCard({ booking }: BookingCardProps) {
+export function BookingCard({ booking, onBookingUpdate }: BookingCardProps) {
     const { flight } = booking;
+    const token = useToken();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const canCancel = booking.status === 'booked' && 
+                     new Date(flight.departure_time) > new Date();
+
+    const handleCancelBooking = async () => {
+        if (!token) return;
+        
+        setIsLoading(true);
+        try {
+            const updatedBooking = await cancelBooking(booking.id, token);
+            onBookingUpdate?.(updatedBooking);
+        } catch (error) {
+            console.error('Failed to cancel booking:', error);
+            // You might want to show a toast notification here
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <Card variant="classic" size="3" style={{ width: '100%' }}>
@@ -18,9 +42,44 @@ export function BookingCard({ booking }: BookingCardProps) {
                     <Text size="4" weight="bold">
                         {flight.origin} → {flight.destination}
                     </Text>
-                    <Badge color={booking.status === 'cancelled' ? 'red' : 'green'}>
-                        {booking.status.toUpperCase()}
-                    </Badge>
+                    <Flex align="center" gap="2">
+                        <Badge color={booking.status === 'cancelled' ? 'red' : 'green'}>
+                            {booking.status.toUpperCase()}
+                        </Badge>
+                        {canCancel && (
+                            <AlertDialog.Root>
+                                <AlertDialog.Trigger>
+                                    <Button 
+                                        variant="soft" 
+                                        color="red" 
+                                        size="1" 
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? 'Cancelling...' : 'Cancel'}
+                                    </Button>
+                                </AlertDialog.Trigger>
+                                <AlertDialog.Content style={{ maxWidth: 450 }}>
+                                    <AlertDialog.Title>Cancel Booking</AlertDialog.Title>
+                                    <AlertDialog.Description size="2">
+                                        Are you sure you want to cancel this booking? This action cannot be undone.
+                                    </AlertDialog.Description>
+
+                                    <Flex gap="3" mt="4" justify="end">
+                                        <AlertDialog.Cancel>
+                                            <Button variant="soft" color="gray">
+                                                Cancel
+                                            </Button>
+                                        </AlertDialog.Cancel>
+                                        <AlertDialog.Action>
+                                            <Button variant="solid" color="red" onClick={handleCancelBooking}>
+                                                Yes, Cancel Booking
+                                            </Button>
+                                        </AlertDialog.Action>
+                                    </Flex>
+                                </AlertDialog.Content>
+                            </AlertDialog.Root>
+                        )}
+                    </Flex>
                 </Flex>
 
                 <Box>

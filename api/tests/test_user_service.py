@@ -234,10 +234,10 @@ class TestUserService:
         user_id, expiration = call_args[0]
         
         assert user_id == 1
-        # Check that expiration is approximately 1 hour in the future
+        # Check that expiration is approximately 30 minutes in the future
         now = datetime.now(timezone.utc)
-        assert expiration > now + timedelta(minutes=55)
-        assert expiration < now + timedelta(minutes=65)
+        assert expiration > now + timedelta(minutes=25)
+        assert expiration < now + timedelta(minutes=35)
     
     def test_register_crypto_integration(self, user_service, mock_user_repo, sample_user_create, sample_db_user):
         """Test that registration properly integrates with crypto manager."""
