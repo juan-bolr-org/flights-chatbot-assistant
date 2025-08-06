@@ -114,7 +114,7 @@ export function ChatPanel({
         }
     }, [messages]);
 
-    // Scroll automático al final
+    // Auto scroll to bottom
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);

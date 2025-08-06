@@ -212,7 +212,7 @@ h3 {
   border-top: 2px solid transparent;
 }
 
-/* Animación de gradiente */
+/* Gradient animation */
 @keyframes gradient {
   0% {
     background-position: 0% 50%;

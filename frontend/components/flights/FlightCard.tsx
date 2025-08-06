@@ -50,7 +50,7 @@ export function FlightCard({ flight }: FlightCardProps) {
                 justifyContent: 'space-between',
             }}
         >
-            {/* Imagen */}
+            {/* Image */}
             <Box style={{ position: 'relative', height: '12rem' }}>
                 <Image
                     src={'/images/polvora.jpeg'}
@@ -60,7 +60,7 @@ export function FlightCard({ flight }: FlightCardProps) {
                 />
             </Box>
 
-            {/* Etiquetas y Título */}
+            {/* Labels and Title */}
             <Box px="4" pt="4">
                 <Flex justify="between" mb="2">
                     <Flex gap="2">
@@ -91,7 +91,7 @@ export function FlightCard({ flight }: FlightCardProps) {
                 </Box>
             </Box>
 
-            {/* Detalles de Vuelo */}
+            {/* Flight Details */}
             <Box px="4">
                 <Flex direction="column" gap="3" mt="2">
                     <Flex direction="row" gap="2" align="center">

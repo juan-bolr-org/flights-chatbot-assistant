@@ -56,8 +56,8 @@ class TestChatbotMessageRepository:
     def sample_message_data(self):
         """Sample message data for testing."""
         return {
-            "message": "¿Cuáles son los vuelos disponibles?",
-            "response": "Hay varios vuelos disponibles..."
+            "message": "What flights are available?",
+            "response": "There are several flights available..."
         }
 
     # ===== POSITIVE TESTS =====
@@ -94,7 +94,7 @@ class TestChatbotMessageRepository:
         messages = message_repo.find_by_user_id(sample_user.id)
         
         assert len(messages) == 2
-        # Verificar que los mensajes están ordenados por created_at desc
+        # Verify that messages are ordered by created_at desc
         assert messages[0].id == message2.id
         assert messages[1].id == message1.id
 
@@ -142,8 +142,8 @@ class TestChatbotMessageRepository:
         for i in range(3):
             message_repo.create(
                 user_id=sample_user.id,
-                message=f"Mensaje {i}",
-                response=f"Respuesta {i}"
+                message=f"Message {i}",
+                response=f"Response {i}"
             )
         
         # Test limit

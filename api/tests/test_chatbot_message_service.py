@@ -16,7 +16,7 @@ from schemas.chat import ChatRequest, ChatMessageResponse, ChatHistoryResponse
 from exceptions import AgentInvocationFailedError, ChatMessageSaveFailedError
 from repository.chatbot_message import ChatbotMessageRepository
 
-@pytest.mark.asyncio  # Añadir este decorador para tests asíncronos
+@pytest.mark.asyncio  # Add this decorator for async tests
 class TestChatService:
     """Test suite for ChatService."""
     
