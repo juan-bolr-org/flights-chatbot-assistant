@@ -16,8 +16,40 @@ export async function speechToText(audioFile: File, token: string): Promise<stri
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || 'Failed to convert speech to text');
+    let errorMessage = 'Failed to convert speech to text';
+    
+    try {
+      const errorData = await response.json();
+      
+      // Handle different error response formats
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (errorData?.detail) {
+        // Handle structured error from backend
+        if (typeof errorData.detail === 'object') {
+          errorMessage = errorData.detail.message || JSON.stringify(errorData.detail);
+        } else {
+          errorMessage = errorData.detail;
+        }
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      } else if (typeof errorData === 'object') {
+        // Try to extract meaningful info from object
+        errorMessage = JSON.stringify(errorData);
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, try to get text response
+      try {
+        const textResponse = await response.text();
+        errorMessage = textResponse || `HTTP ${response.status}: ${response.statusText}`;
+      } catch (textError) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 
   const data: SpeechToTextResponse = await response.json();

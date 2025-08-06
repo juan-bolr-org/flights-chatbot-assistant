@@ -60,11 +60,27 @@ class AzureSpeechService(SpeechService):
             logger.error(f"Could not decode audio file: {e}")
             raise InvalidAudioFileError("Unsupported audio format or corrupted file")
         except FileNotFoundError as e:
+            error_msg = str(e)
             logger.error(f"File not found: {e}")
-            raise SpeechRecognitionFailedError(f"Input file not found: {str(e)}")
+            
+            # Check if it's ffmpeg/ffprobe missing
+            if "ffprobe" in error_msg or "ffmpeg" in error_msg:
+                raise SpeechRecognitionFailedError(
+                    "Audio conversion failed: ffmpeg is not available on the system"
+                )
+            else:
+                raise SpeechRecognitionFailedError(f"Input file not found: {str(e)}")
         except Exception as e:
+            error_msg = str(e)
             logger.error(f"Error converting audio to WAV: {e}")
-            raise SpeechRecognitionFailedError(f"Audio conversion failed: {str(e)}")
+            
+            # Check if it's ffmpeg/ffprobe missing
+            if "ffprobe" in error_msg or "ffmpeg" in error_msg:
+                raise SpeechRecognitionFailedError(
+                    "Audio conversion failed: ffmpeg is not available on the system"
+                )
+            else:
+                raise SpeechRecognitionFailedError(f"Audio conversion failed: {str(e)}")
     
     async def speech_to_text(self, audio_file: UploadFile) -> tuple[str, float]:
         """Convert audio file to text using Azure Speech Service."""
@@ -130,9 +146,9 @@ class AzureSpeechService(SpeechService):
                 speech_config=speech_config, 
                 audio_config=audio_config
             )
-            
+
             # Perform recognition
-            result = speech_recognizer.recognize_once()
+            result = await speech_recognizer.recognize_once_async()
             
             if result.reason == speechsdk.ResultReason.RecognizedSpeech:
                 confidence = getattr(result, 'confidence', 1.0)

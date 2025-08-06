@@ -33,7 +33,6 @@ async def speech_to_text(
         text, confidence = await speech_service.speech_to_text(audio)
         
         logger.info(f"Successfully processed speech-to-text for user {user.email}")
-        # Do not log the recognized text content for privacy
         
         return SpeechToTextResponse(text=text, confidence=confidence)
         

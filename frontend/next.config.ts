@@ -24,14 +24,14 @@ const nextConfig: NextConfig = {
   },
   
   env: {
-    API_URL: process.env.API_URL || "http://localhost:3000",
+    API_URL: process.env.API_URL || "http://localhost:8000",
   },
   
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.API_URL || 'http://localhost:3000'}/:path*`,
+        destination: `${process.env.API_URL || 'http://localhost:8000'}/:path*`,
       },
     ];
   },

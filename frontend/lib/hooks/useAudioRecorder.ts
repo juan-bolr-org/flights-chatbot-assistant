@@ -92,7 +92,22 @@ export function useAudioRecorder(maxDurationMs: number = 60000): UseAudioRecorde
 
     } catch (err) {
       console.error('Error starting recording:', err);
-      setError('Failed to start recording. Please check microphone permissions.');
+      
+      let errorMessage = 'Failed to start recording. Please check microphone permissions.';
+      
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          errorMessage = 'Microphone access denied. Please allow microphone permissions.';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'No microphone found. Please connect a microphone.';
+        } else if (err.name === 'NotSupportedError') {
+          errorMessage = 'Audio recording not supported in this browser.';
+        } else {
+          errorMessage = err.message || errorMessage;
+        }
+      }
+      
+      setError(errorMessage);
       setIsRecording(false);
     }
   }, [maxDurationMs]);

@@ -38,7 +38,19 @@ export function AudioRecorder({ onTextReceived, disabled = false, token }: Audio
     try {
       await startRecording();
     } catch (err) {
-      setError('Failed to start recording. Please check microphone permissions.');
+      console.error('Recording start error:', err);
+      
+      let errorMessage = 'Failed to start recording. Please check microphone permissions.';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object') {
+        errorMessage = (err as any).message || (err as any).detail || errorMessage;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -81,7 +93,19 @@ export function AudioRecorder({ onTextReceived, disabled = false, token }: Audio
       }
     } catch (err) {
       console.error('Error processing audio:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process audio');
+      
+      let errorMessage = 'Failed to process audio';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object') {
+        // Handle cases where err might be an object with message property
+        errorMessage = (err as any).message || (err as any).detail || JSON.stringify(err);
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }

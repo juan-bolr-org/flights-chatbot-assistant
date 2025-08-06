@@ -5,6 +5,30 @@ This is the API for the Flights Chatbot Assistant project. It provides endpoints
 ## Requirements
 
 - Python 3.12 or higher
+- ffmpeg (required for audio processing in speech-to-text feature)
+
+### Installing System Dependencies
+
+**Ubuntu/Debian:**
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+**macOS:**
+
+```bash
+brew install ffmpeg
+```
+
+**Windows:**
+
+Download from <https://ffmpeg.org/download.html> or use chocolatey:
+
+```cmd
+choco install ffmpeg
+```
 
 ## Quick Start with Helper Tool
 
