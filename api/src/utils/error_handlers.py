@@ -38,6 +38,12 @@ def api_exception_to_http_exception(exc: ApiException) -> HTTPException:
         
         # 500 Internal Server Error - System errors
         ErrorCode.AGENT_INVOCATION_FAILED: 500,
+        ErrorCode.SPEECH_SERVICE_NOT_CONFIGURED: 500,
+        ErrorCode.SPEECH_RECOGNITION_FAILED: 500,
+        
+        # 422 Unprocessable Entity - Invalid input
+        ErrorCode.INVALID_AUDIO_FILE: 422,
+        ErrorCode.NO_SPEECH_DETECTED: 422,
     }
     
     status_code = status_code_mapping.get(exc.error_code, 500)
