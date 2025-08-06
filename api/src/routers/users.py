@@ -28,7 +28,7 @@ def register(
             key="access_token",
             value=token.access_token,
             samesite="lax",
-            max_age=3600 * 24 * 7  # 7 days
+            max_age=30 * 60  # 30 minutes
         )
         
         return token
@@ -57,7 +57,7 @@ def login(
             key="access_token",
             value=user_response.token.access_token,
             samesite="lax",
-            max_age=3600 * 24 * 7  # 7 days
+            max_age=30 * 60  # 30 minutes
         )
         
         return user_response

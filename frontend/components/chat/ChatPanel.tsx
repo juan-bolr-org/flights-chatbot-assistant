@@ -79,8 +79,7 @@ export function ChatPanel({
                 } else {
                     // If no history, show default messages
                     setMessages([
-                        { role: 'bot', content: 'Hello! How can I assist you today?' },
-                        { role: 'bot', content: 'Feel free to ask me anything about your flight.' },
+                        { role: 'bot', content: 'Hello! How can I assist you today?\nFeel free to ask me anything about your flight.' }
                     ]);
                 }
             } catch (error) {
