@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from routers.flights import router
 from services.flight import FlightService, create_flight_service
-from schemas.flight import FlightResponse, FlightCreate
+from schemas.flight import FlightResponse, FlightCreate, PaginatedResponse
 from models import User, Flight
 from exceptions import InvalidDateFormatError
 from resources.dependencies import get_current_user
@@ -113,8 +113,15 @@ class TestFlightRouter:
     
     def test_search_flights_success(self, client, mock_flight_service, sample_flight_list):
         """Test successful flight search."""
-        # Setup mock
-        mock_flight_service.search_flights.return_value = sample_flight_list
+        # Setup mock to return PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_flight_list,
+            total=2,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
         
         # Execute
         response = client.get("/flights/search?origin=New York&destination=Los Angeles&departure_date=2025-12-25")
@@ -122,20 +129,31 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 2
-        assert data[0]["id"] == 1
-        assert data[0]["origin"] == "New York"
-        assert data[0]["destination"] == "Los Angeles"
-        assert data[1]["id"] == 2
-        assert data[1]["origin"] == "Chicago"
+        assert data["total"] == 2
+        assert data["page"] == 1
+        assert data["size"] == 10
+        assert data["pages"] == 1
+        assert len(data["items"]) == 2
+        assert data["items"][0]["id"] == 1
+        assert data["items"][0]["origin"] == "New York"
+        assert data["items"][0]["destination"] == "Los Angeles"
+        assert data["items"][1]["id"] == 2
+        assert data["items"][1]["origin"] == "Chicago"
         
-        # Verify service was called
-        mock_flight_service.search_flights.assert_called_once_with("New York", "Los Angeles", "2025-12-25")
+        # Verify service was called with new signature
+        mock_flight_service.search_flights.assert_called_once_with("New York", "Los Angeles", "2025-12-25", 1, 10)
     
     def test_search_flights_empty_result(self, client, mock_flight_service):
         """Test flight search with no results."""
-        # Setup mock
-        mock_flight_service.search_flights.return_value = []
+        # Setup mock to return empty PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
         
         # Execute
         response = client.get("/flights/search?origin=Boston&destination=Seattle&departure_date=2025-12-25")
@@ -143,10 +161,11 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 0
+        assert data["total"] == 0
+        assert len(data["items"]) == 0
         
-        # Verify service was called
-        mock_flight_service.search_flights.assert_called_once_with("Boston", "Seattle", "2025-12-25")
+        # Verify service was called with new signature
+        mock_flight_service.search_flights.assert_called_once_with("Boston", "Seattle", "2025-12-25", 1, 10)
     
     def test_search_flights_invalid_date_format(self, client, mock_flight_service):
         """Test flight search with invalid date format."""
@@ -176,35 +195,51 @@ class TestFlightRouter:
         data = response.json()
         assert "Error searching flights" in data["detail"]
     
-    def test_search_flights_missing_parameters(self, client):
-        """Test flight search with missing required parameters."""
-        # Missing departure_date
-        response = client.get("/flights/search?origin=New York&destination=Los Angeles")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    def test_search_flights_missing_parameters(self, client, mock_flight_service):
+        """Test flight search with no parameters (should now work with all optional)."""
+        # Setup mock to return empty PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
         
-        # Missing destination
-        response = client.get("/flights/search?origin=New York&departure_date=2025-12-25")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # No parameters should work now
+        response = client.get("/flights/search")
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["total"] == 0
+        assert len(data["items"]) == 0
         
-        # Missing origin
-        response = client.get("/flights/search?destination=Los Angeles&departure_date=2025-12-25")
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # Verify service was called with None values
+        mock_flight_service.search_flights.assert_called_once_with(None, None, None, 1, 10)
     
     def test_search_flights_special_characters(self, client, mock_flight_service, sample_flight_list):
         """Test flight search with special characters in city names."""
-        # Setup mock
-        mock_flight_service.search_flights.return_value = sample_flight_list
-        
+        # Setup mock to return PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_flight_list,
+            total=2,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
+
         # Execute with URL-encoded special characters
         response = client.get("/flights/search?origin=São Paulo&destination=México City&departure_date=2025-12-25")
-        
+
         # Verify
         assert response.status_code == status.HTTP_200_OK
-        
-        # Verify service was called with decoded characters
-        mock_flight_service.search_flights.assert_called_once_with("São Paulo", "México City", "2025-12-25")
-    
-    # ===== CREATE FLIGHT ENDPOINT TESTS =====
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert response.status_code == status.HTTP_200_OK
+
+        # Verify service was called with decoded characters and pagination parameters
+        mock_flight_service.search_flights.assert_called_once_with("São Paulo", "México City", "2025-12-25", 1, 10)    # ===== CREATE FLIGHT ENDPOINT TESTS =====
     
     def test_create_flight_success(self, client, mock_flight_service, sample_flight_create_data, sample_flight_response):
         """Test successful flight creation."""
@@ -281,8 +316,15 @@ class TestFlightRouter:
     
     def test_list_flights_success(self, client, mock_flight_service, sample_flight_list):
         """Test successful flight listing."""
-        # Setup mock
-        mock_flight_service.list_flights.return_value = sample_flight_list
+        # Setup mock to return PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_flight_list,
+            total=2,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.list_flights.return_value = paginated_response
         
         # Execute
         response = client.get("/flights/list")
@@ -290,19 +332,27 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 2
-        assert data[0]["id"] == 1
-        assert data[0]["origin"] == "New York"
-        assert data[1]["id"] == 2
-        assert data[1]["origin"] == "Chicago"
+        assert data["total"] == 2
+        assert len(data["items"]) == 2
+        assert data["items"][0]["id"] == 1
+        assert data["items"][0]["origin"] == "New York"
+        assert data["items"][1]["id"] == 2
+        assert data["items"][1]["origin"] == "Chicago"
         
-        # Verify service was called
-        mock_flight_service.list_flights.assert_called_once()
+        # Verify service was called with pagination defaults
+        mock_flight_service.list_flights.assert_called_once_with(1, 10)
     
     def test_list_flights_empty(self, client, mock_flight_service):
         """Test flight listing when no flights exist."""
-        # Setup mock
-        mock_flight_service.list_flights.return_value = []
+        # Setup mock to return empty PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.list_flights.return_value = paginated_response
         
         # Execute
         response = client.get("/flights/list")
@@ -310,10 +360,11 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 0
+        assert data["total"] == 0
+        assert len(data["items"]) == 0
         
-        # Verify service was called
-        mock_flight_service.list_flights.assert_called_once()
+        # Verify service was called with pagination defaults
+        mock_flight_service.list_flights.assert_called_once_with(1, 10)
     
     def test_list_flights_internal_error(self, client, mock_flight_service):
         """Test flight listing with unexpected internal error."""
@@ -361,8 +412,15 @@ class TestFlightRouter:
     
     def test_search_flights_very_long_city_names(self, client, mock_flight_service, sample_flight_list):
         """Test flight search with very long city names."""
-        # Setup mock
-        mock_flight_service.search_flights.return_value = sample_flight_list
+        # Setup mock to return PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_flight_list,
+            total=2,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
         
         long_origin = "A" * 100
         long_destination = "B" * 100
@@ -373,8 +431,8 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         
-        # Verify service was called with long names
-        mock_flight_service.search_flights.assert_called_once_with(long_origin, long_destination, "2025-12-25")
+        # Verify service was called with long names and pagination defaults
+        mock_flight_service.search_flights.assert_called_once_with(long_origin, long_destination, "2025-12-25", 1, 10)
     
     def test_create_flight_extreme_price(self, client, mock_flight_service, sample_flight_response):
         """Test flight creation with extreme price."""
@@ -401,8 +459,15 @@ class TestFlightRouter:
     
     def test_search_flights_future_date(self, client, mock_flight_service, sample_flight_list):
         """Test flight search with far future date."""
-        # Setup mock
-        mock_flight_service.search_flights.return_value = sample_flight_list
+        # Setup mock to return PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_flight_list,
+            total=2,
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_flight_service.search_flights.return_value = paginated_response
         
         # Execute with far future date
         response = client.get("/flights/search?origin=Mars&destination=Earth&departure_date=2099-12-31")
@@ -410,5 +475,5 @@ class TestFlightRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         
-        # Verify service was called
-        mock_flight_service.search_flights.assert_called_once_with("Mars", "Earth", "2099-12-31")
+        # Verify service was called with pagination defaults
+        mock_flight_service.search_flights.assert_called_once_with("Mars", "Earth", "2099-12-31", 1, 10)

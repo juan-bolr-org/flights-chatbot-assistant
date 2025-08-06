@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Optional
 from repository import User
-from schemas import FlightResponse, FlightCreate
+from schemas import FlightResponse, FlightCreate, PaginatedResponse
 from resources.dependencies import get_current_user
 from resources.logging import get_logger
 from services import FlightService, create_flight_service
@@ -11,22 +11,24 @@ from utils.error_handlers import api_exception_to_http_exception
 router = APIRouter(prefix="/flights", tags=["flights"])
 logger = get_logger("flights_router")
 
-@router.get("/search", response_model=List[FlightResponse])
+@router.get("/search", response_model=PaginatedResponse[FlightResponse])
 def search_flights(
-    origin: str, 
-    destination: str, 
-    departure_date: str,
+    origin: Optional[str] = Query(None, description="Origin airport code or city name"),
+    destination: Optional[str] = Query(None, description="Destination airport code or city name"), 
+    departure_date: Optional[str] = Query(None, description="Departure date in YYYY-MM-DD format"),
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    size: int = Query(10, ge=1, le=100, description="Number of items per page"),
     flight_service: FlightService = Depends(create_flight_service)
 ):
     try:
-        flights = flight_service.search_flights(origin, destination, departure_date)
+        flights = flight_service.search_flights(origin, destination, departure_date, page, size)
         return flights
         
     except ApiException as e:
-        logger.warning(f"Invalid date format provided: {departure_date}")
+        logger.warning(f"Invalid parameters provided - origin: {origin}, destination: {destination}, departure_date: {departure_date}")
         raise api_exception_to_http_exception(e)
     except Exception as e:
-        logger.error(f"Error searching flights from {origin} to {destination}: {e}", exc_info=True)
+        logger.error(f"Error searching flights with filters - origin: {origin}, destination: {destination}, departure_date: {departure_date}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error searching flights: {str(e)}"
@@ -49,16 +51,18 @@ def create_flight(
             detail=f"Error creating flight: {str(e)}"
         )
 
-@router.get("/list", response_model=List[FlightResponse])
+@router.get("/list", response_model=PaginatedResponse[FlightResponse])
 def list_flights(
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    size: int = Query(10, ge=1, le=100, description="Number of items per page"),
     flight_service: FlightService = Depends(create_flight_service)
 ):
     try:
-        flights = flight_service.list_flights()
+        flights = flight_service.list_flights(page, size)
         return flights
         
     except Exception as e:
-        logger.error(f"Error retrieving flights list: {e}", exc_info=True)
+        logger.error(f"Error retrieving flights list (page: {page}, size: {size}): {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error retrieving flights: {str(e)}"
