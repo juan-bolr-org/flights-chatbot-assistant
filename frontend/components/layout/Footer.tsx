@@ -24,7 +24,7 @@ export default function Footer() {
             Flight Assistant Chatbot
           </Text>
           <Text as="p" color="gray" highContrast>
-            Polvora no, repolvora
+            DreamTeam Airlines, where your adventure begins.
           </Text>
         </Box>
 
@@ -65,7 +65,7 @@ export default function Footer() {
 
       <Flex align="center" justify="center">
         <Text align="center" size="1" className="gradient-text">
-          © {new Date().getFullYear()} Polvora Inc. All rights reserved.
+          © {new Date().getFullYear()} DreamTeam Inc. All rights reserved.
         </Text>
       </Flex>
     </Flex>
