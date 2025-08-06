@@ -9,9 +9,10 @@ import {
     Text,
     Flex,
     Callout,
+    AlertDialog,
 } from '@radix-ui/themes';
-import { ExitIcon, PaperPlaneIcon } from '@radix-ui/react-icons';
-import { sendChatMessage, getChatHistory } from '@/lib/api/chat';
+import { ExitIcon, PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons';
+import { sendChatMessage, getChatHistory, deleteChatHistory } from '@/lib/api/chat';
 import { AlertCircleIcon } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 
@@ -35,9 +36,10 @@ export function ChatPanel({
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+    const [isClearingChat, setIsClearingChat] = useState(false);
     const { user } = useUser();
 
-    const bottomRef = useRef<HTMLElement | null>(null);
+    const bottomRef = useRef<HTMLDivElement | null>(null);
     const hasFetchedHistory = useRef(false);
 
     // Load chat history when component mounts or user changes
@@ -147,19 +149,86 @@ export function ChatPanel({
         }
     };
 
+    const handleClearChat = async () => {
+        if (!user?.token) return;
+
+        setIsClearingChat(true);
+        try {
+            await deleteChatHistory(user.token.access_token);
+            
+            // Reset messages to default welcome messages with success notification
+            setMessages([
+                { role: 'bot', content: 'Chat history has been cleared successfully! 🗑️' },
+                { role: 'bot', content: 'Hello! How can I assist you today?' },
+                { role: 'bot', content: 'Feel free to ask me anything about your flight.' },
+            ]);
+            
+            // Reset the fetch flag so history can be loaded again if needed
+            hasFetchedHistory.current = false;
+            
+        } catch (error) {
+            console.error('Error clearing chat history:', error);
+            setMessages((prev: Message[]) => [
+                ...prev,
+                { role: 'bot', content: 'Sorry, there was an error clearing the chat history.' },
+            ]);
+        } finally {
+            setIsClearingChat(false);
+        }
+    };
+
     if (!open) return null;
 
     return (
         <Flex direction="column" flexGrow="1" justify="between" mt="4" className="openChat">
             <Flex direction="row" justify="between" align="center" mb="4">
                 <Text size="3" weight="bold">Flight Assistant Chatbot</Text>
-                <Button
-                    variant="ghost"
-                    size="2"
-                    onClick={() => onOpenChange(false)}
-                >
-                    <ExitIcon />
-                </Button>
+                <Flex gap="2" align="center">
+                    {user && (
+                        <AlertDialog.Root>
+                            <AlertDialog.Trigger>
+                                <Button
+                                    variant="ghost"
+                                    size="2"
+                                    disabled={
+                                        isClearingChat || 
+                                        messages.length === 0 || 
+                                        (messages.length <= 3 && messages.every(msg => msg.role === 'bot'))
+                                    }
+                                    title="Clear chat history"
+                                >
+                                    {isClearingChat ? '...' : <TrashIcon />}
+                                </Button>
+                            </AlertDialog.Trigger>
+                            <AlertDialog.Content style={{ maxWidth: 450 }}>
+                                <AlertDialog.Title>Clear Chat History</AlertDialog.Title>
+                                <AlertDialog.Description size="2">
+                                    Are you sure you want to clear all chat history? This action cannot be undone.
+                                </AlertDialog.Description>
+
+                                <Flex gap="3" mt="4" justify="end">
+                                    <AlertDialog.Cancel>
+                                        <Button variant="soft" color="gray">
+                                            Cancel
+                                        </Button>
+                                    </AlertDialog.Cancel>
+                                    <AlertDialog.Action>
+                                        <Button variant="solid" color="red" onClick={handleClearChat}>
+                                            Clear Chat
+                                        </Button>
+                                    </AlertDialog.Action>
+                                </Flex>
+                            </AlertDialog.Content>
+                        </AlertDialog.Root>
+                    )}
+                    <Button
+                        variant="ghost"
+                        size="2"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <ExitIcon />
+                    </Button>
+                </Flex>
             </Flex>
 
             <ScrollArea

@@ -17,3 +17,22 @@ export async function getUserBookings(token: string): Promise<Booking[]> {
 
     return res.json();
 }
+
+export async function cancelBooking(bookingId: number, token: string): Promise<Booking> {
+    const res = await fetch(`${API_URL}/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+        credentials: 'include',
+    });
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to cancel booking: ${errorText}`);
+    }
+
+    return res.json();
+}

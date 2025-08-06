@@ -111,6 +111,9 @@ set SECRET_KEY=your_secret_key
 |--------|------------------------------------|-----------------------------------|
 | POST   | /users/register                    | Register a new user               |
 | POST   | /users/login                       | User login                        |
+| GET    | /users/me                          | Get current user information      |
+| POST   | /users/refresh                     | Refresh JWT token (30 min)        |
+| POST   | /users/logout                      | User logout                       |
 | GET    | /flights/search                    | Search for flights                |
 | GET    | /flights/list                      | List all flights                  |
 | POST   | /flights                           | Create a new flight               |

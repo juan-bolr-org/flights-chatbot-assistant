@@ -112,3 +112,34 @@ export async function getCurrentUser(): Promise<AuthResponse> {
         throw new Error('Unknown error while getting current user');
     }
 }
+
+// Refresh JWT token
+export async function refreshToken(): Promise<Token> {
+    try {
+        const token = getCookie('access_token');
+        
+        if (!token) {
+            throw new Error('No access token found');
+        }
+
+        const res = await fetch(`${API_URL}/users/refresh`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            credentials: 'include', // Include cookies in the request
+        });
+
+        if (!res.ok) {
+            throw new Error('Failed to refresh token');
+        }
+
+        return await res.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error(`Error refreshing token: ${error.message}`);
+        }
+        throw new Error('Unknown error while refreshing token');
+    }
+}

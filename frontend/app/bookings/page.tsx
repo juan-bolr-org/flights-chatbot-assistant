@@ -6,6 +6,7 @@ import { getUserBookings } from '@/lib/api/booking';
 import { Booking } from '@/lib/types/booking';
 import { BookingCard } from '@/components/bookings/BookingCard';
 import { useUser } from '@/context/UserContext';
+import { useToken } from '@/context/UserContext';
 
 import { Button, Container, Flex, Section, Text, Box } from '@radix-ui/themes';
 
@@ -19,6 +20,15 @@ export default function BookingsPage() {
     const hasFetched = useRef(false);
     const router = useRouter();
     const { user } = useUser();
+    const token = useToken();
+
+    const handleBookingUpdate = (updatedBooking: Booking) => {
+        setBookings(prevBookings => 
+            prevBookings.map(booking => 
+                booking.id === updatedBooking.id ? updatedBooking : booking
+            )
+        );
+    };
 
     useEffect(() => {
         if (hasFetched.current) return;
@@ -30,8 +40,8 @@ export default function BookingsPage() {
                     router.replace('/login');
                     return;
                 }
-                if (user.token) {
-                    const result = await getUserBookings(user.token?.access_token);
+                if (user?.token) {
+                    const result = await getUserBookings(user.token.access_token);
                     setBookings(result);
                 } else {
                     setError('User token is missing. Please log in again.');
@@ -88,7 +98,11 @@ export default function BookingsPage() {
                 <Flex direction="column" gap="4" align="stretch">
                     {paginatedBookings.length > 0 ? (
                         paginatedBookings.map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} />
+                            <BookingCard 
+                                key={booking.id} 
+                                booking={booking} 
+                                onBookingUpdate={handleBookingUpdate}
+                            />
                         ))
                     ) : (
                         <Text>No bookings found.</Text>

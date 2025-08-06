@@ -284,3 +284,54 @@ class TestUserRouter:
         mock_user_service.register.side_effect = EmailAlreadyExistsError("john.doe@example.com")
         response2 = client.post("/users/register", json=data)
         assert response2.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_refresh_token_success(self, client, mock_user_service):
+        """Test successful token refresh."""
+        # Mock the dependencies - we need to mock get_current_user as well
+        from repository.user import User
+        from fastapi import Depends
+        from resources.dependencies import get_current_user
+        from unittest.mock import Mock
+        import datetime
+        
+        # Create a mock user
+        mock_user = Mock(spec=User)
+        mock_user.id = 1
+        mock_user.email = "john.doe@example.com"
+        mock_user.name = "John Doe"
+        
+        # Override get_current_user dependency
+        def mock_get_current_user():
+            return mock_user
+        
+        # Apply the override to the client's app
+        client.app.dependency_overrides[get_current_user] = mock_get_current_user
+        
+        # Execute
+        response = client.post(
+            "/users/refresh",
+            headers={"Authorization": "Bearer valid_token"}
+        )
+        
+        # Verify
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        
+        # Verify cookie is set
+        assert "access_token" in response.cookies
+        
+    def test_refresh_token_unauthorized(self, client):
+        """Test token refresh without authentication."""
+        response = client.post("/users/refresh")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        
+    def test_refresh_token_invalid_token(self, client):
+        """Test token refresh with invalid token."""
+        response = client.post(
+            "/users/refresh",
+            headers={"Authorization": "Bearer invalid_token"}
+        )
+        # Should fail at the get_current_user dependency level
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]

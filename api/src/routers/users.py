@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from datetime import timedelta
 from schemas import UserCreate, UserLogin, Token, UserResponse
 from resources.logging import get_logger
 from resources.dependencies import get_current_user
+from resources.crypto import crypto_manager
 from services import UserService, create_user_service
 from repository import User
 from exceptions import ApiException
@@ -89,6 +91,43 @@ def get_current_user_info(
         raise HTTPException(
             status_code=500,
             detail=f"Error retrieving user information: {str(e)}"
+        )
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    user_service: UserService = Depends(create_user_service)
+):
+    """
+    Refresh JWT token for authenticated users with valid tokens.
+    Issues a new token with 30 minutes duration.
+    """
+    try:
+        # Create new token with 30 minutes duration
+        new_access_token = crypto_manager.create_access_token(
+            data={"sub": current_user.email},
+            expires_delta=timedelta(minutes=30)
+        )
+        
+        token = Token(access_token=new_access_token, token_type="bearer")
+        
+        # Set the new JWT token as HTTP-only cookie
+        response.set_cookie(
+            key="access_token",
+            value=token.access_token,
+            samesite="lax",
+            max_age=30 * 60  # 30 minutes
+        )
+        
+        logger.info(f"Token refreshed successfully for user: {current_user.email} (ID: {current_user.id})")
+        return token
+        
+    except Exception as e:
+        logger.error(f"Error refreshing token for user {current_user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error refreshing token: {str(e)}"
         )
 
 @router.post("/logout")
