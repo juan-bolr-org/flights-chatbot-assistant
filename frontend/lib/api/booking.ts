@@ -1,9 +1,25 @@
-import { Booking } from '@/lib/types/booking';
+import { Booking, PaginatedBookingsResponse } from '@/lib/types/booking';
 
 const API_URL = '/api';
 
-export async function getUserBookings(token: string): Promise<Booking[]> {
-    const res = await fetch(`${API_URL}/bookings/user`, {
+export async function getUserBookings(
+    token: string, 
+    status?: string,
+    bookedDate?: string,
+    departureDate?: string,
+    page: number = 1, 
+    size: number = 10
+): Promise<PaginatedBookingsResponse> {
+    const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString(),
+    });
+
+    if (status) params.append('status', status);
+    if (bookedDate) params.append('booked_date', bookedDate);
+    if (departureDate) params.append('departure_date', departureDate);
+
+    const res = await fetch(`${API_URL}/bookings/user?${params.toString()}`, {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,

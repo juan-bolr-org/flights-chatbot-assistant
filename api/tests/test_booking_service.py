@@ -16,6 +16,7 @@ from repository.booking import BookingRepository
 from repository.flight import FlightRepository
 from models import Booking, User, Flight
 from schemas.booking import BookingCreate, BookingUpdate, BookingResponse
+from schemas.flight import PaginatedResponse
 from exceptions import (
     FlightNotAvailableError, 
     BookingAlreadyExistsError, 
@@ -352,8 +353,9 @@ class TestBookingService:
         result = booking_service.update_booking(sample_user, 1, sample_booking_update_pending)
         
         # Verify - now expecting BookingResponse object
+        # Note: The computed status logic will convert "pending" to "booked" for future flights
         assert isinstance(result, BookingResponse)
-        assert result.status == "pending"
+        assert result.status == "booked"  # Updated to match computed status logic
         
         # Verify repository calls
         mock_booking_repo.find_by_id.assert_called_once_with(1)
@@ -454,78 +456,85 @@ class TestBookingService:
     
     def test_get_user_bookings_success(self, booking_service, mock_booking_repo, sample_user, sample_booking_list):
         """Test successful retrieval of user bookings."""
-        # Setup mock
-        mock_booking_repo.find_by_user_id.return_value = sample_booking_list
+        # Setup mock to return tuple (bookings, total_count)
+        mock_booking_repo.find_by_user_id_paginated.return_value = (sample_booking_list, 2)
         
         # Execute
         result = booking_service.get_user_bookings(sample_user)
         
-        # Verify - now expecting BookingResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 2
-        assert isinstance(result[0], BookingResponse)
-        assert result[0].id == 1
-        assert result[0].status == "booked"
-        assert isinstance(result[1], BookingResponse)
-        assert result[1].id == 2
-        assert result[1].status == "cancelled"
+        # Verify - now expecting PaginatedResponse object
+        assert isinstance(result, PaginatedResponse)
+        assert result.total == 2
+        assert result.page == 1
+        assert result.size == 10
+        assert result.pages == 1
+        assert len(result.items) == 2
+        assert isinstance(result.items[0], BookingResponse)
+        assert result.items[0].id == 1
+        assert result.items[0].status == "booked"
+        assert isinstance(result.items[1], BookingResponse)
+        assert result.items[1].id == 2
+        assert result.items[1].status == "cancelled"
         
         # Verify repository calls
-        mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, None)
+        mock_booking_repo.find_by_user_id_paginated.assert_called_once_with(sample_user.id, None, None, None, 1, 10)
     
     def test_get_user_bookings_with_status_filter(self, booking_service, mock_booking_repo, sample_user, sample_booking_list):
         """Test retrieval of user bookings with status filter."""
         # Filter to only booked bookings
         booked_bookings = [b for b in sample_booking_list if b.status == "booked"]
         
-        # Setup mock
-        mock_booking_repo.find_by_user_id.return_value = booked_bookings
+        # Setup mock to return tuple (bookings, total_count)
+        mock_booking_repo.find_by_user_id_paginated.return_value = (booked_bookings, 1)
         
         # Execute
         result = booking_service.get_user_bookings(sample_user, "booked")
         
-        # Verify - now expecting BookingResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 1
-        assert isinstance(result[0], BookingResponse)
-        assert result[0].status == "booked"
+        # Verify - now expecting PaginatedResponse object
+        assert isinstance(result, PaginatedResponse)
+        assert result.total == 1
+        assert len(result.items) == 1
+        assert isinstance(result.items[0], BookingResponse)
+        assert result.items[0].status == "booked"
         
         # Verify repository calls
-        mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, "booked")
+        mock_booking_repo.find_by_user_id_paginated.assert_called_once_with(sample_user.id, "booked", None, None, 1, 10)
     
     def test_get_user_bookings_empty(self, booking_service, mock_booking_repo, sample_user):
         """Test retrieval of user bookings when user has no bookings."""
-        # Setup mock
-        mock_booking_repo.find_by_user_id.return_value = []
+        # Setup mock to return tuple (empty list, 0 count)
+        mock_booking_repo.find_by_user_id_paginated.return_value = ([], 0)
         
         # Execute
         result = booking_service.get_user_bookings(sample_user)
         
-        # Verify - now expecting empty list of BookingResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 0
+        # Verify - now expecting PaginatedResponse object
+        assert isinstance(result, PaginatedResponse)
+        assert result.total == 0
+        assert len(result.items) == 0
         
         # Verify repository calls
-        mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, None)
+        mock_booking_repo.find_by_user_id_paginated.assert_called_once_with(sample_user.id, None, None, None, 1, 10)
     
     def test_get_user_bookings_upcoming_filter(self, booking_service, mock_booking_repo, sample_user, sample_booking_list):
         """Test retrieval of upcoming bookings."""
         # Filter to only upcoming bookings
         upcoming_bookings = [b for b in sample_booking_list if b.status == "booked"]
         
-        # Setup mock
-        mock_booking_repo.find_by_user_id.return_value = upcoming_bookings
+        # Setup mock to return tuple (bookings, total_count)
+        mock_booking_repo.find_by_user_id_paginated.return_value = (upcoming_bookings, 1)
         
         # Execute
         result = booking_service.get_user_bookings(sample_user, "upcoming")
         
-        # Verify - now expecting BookingResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 1
-        assert isinstance(result[0], BookingResponse)
+        # Verify - now expecting PaginatedResponse object
+        assert isinstance(result, PaginatedResponse)
+        assert result.total == 1
+        assert len(result.items) == 1
+        assert isinstance(result.items[0], BookingResponse)
         
         # Verify repository calls
-        mock_booking_repo.find_by_user_id.assert_called_once_with(sample_user.id, "upcoming")
+        mock_booking_repo.find_by_user_id_paginated.assert_called_once_with(sample_user.id, "upcoming", None, None, 1, 10)
     
     # ===== EDGE CASES =====
     
@@ -545,8 +554,8 @@ class TestBookingService:
     
     def test_get_user_bookings_repository_error(self, booking_service, mock_booking_repo, sample_user):
         """Test user bookings retrieval with repository error."""
-        # Setup mock
-        mock_booking_repo.find_by_user_id.side_effect = Exception("Database connection failed")
+        # Setup mock to raise exception
+        mock_booking_repo.find_by_user_id_paginated.side_effect = Exception("Database connection failed")
         
         # Execute and verify exception
         with pytest.raises(Exception) as exc_info:

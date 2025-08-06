@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, and_, func
 import datetime
 from fastapi import Depends
 from resources.database import get_database_session
@@ -34,6 +34,13 @@ class BookingRepository(ABC):
     @abstractmethod
     def find_by_user_id(self, user_id: int, status_filter: Optional[str] = None) -> List[Booking]:
         """Find all bookings for a user with optional status filter."""
+        pass
+    
+    @abstractmethod
+    def find_by_user_id_paginated(self, user_id: int, status_filter: Optional[str] = None, 
+                                 booked_date: Optional[str] = None, departure_date: Optional[str] = None, 
+                                 page: int = 1, size: int = 10) -> Tuple[List[Booking], int]:
+        """Find all bookings for a user with optional filters and pagination. Returns (bookings, total_count)."""
         pass
     
     @abstractmethod
@@ -111,6 +118,66 @@ class BookingSqliteRepository(BookingRepository):
                 query = query.filter(Booking.status == status_filter)
         
         return query.order_by(Booking.booked_at.desc()).all()
+    
+    def find_by_user_id_paginated(self, user_id: int, status_filter: Optional[str] = None, 
+                                 booked_date: Optional[str] = None, departure_date: Optional[str] = None, 
+                                 page: int = 1, size: int = 10) -> Tuple[List[Booking], int]:
+        """Find all bookings for a user with optional filters and pagination. Returns (bookings, total_count)."""
+        query = self.db.query(Booking).join(Flight).filter(Booking.user_id == user_id)
+        
+        # Apply status filter
+        if status_filter:
+            now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            if status_filter == "booked":
+                # Show active bookings for upcoming flights
+                query = query.filter(
+                    and_(
+                        Booking.status == "booked",
+                        Flight.departure_time > now
+                    )
+                )
+            elif status_filter == "completed":
+                # Show booked flights that have already departed
+                query = query.filter(
+                    and_(
+                        Booking.status == "booked",
+                        Flight.departure_time <= now
+                    )
+                )
+            elif status_filter == "cancelled":
+                # Show cancelled bookings
+                query = query.filter(Booking.status == "cancelled")
+        
+        # Apply booking date filter
+        if booked_date:
+            try:
+                # Parse the date string (expected format: YYYY-MM-DD)
+                filter_date = datetime.datetime.strptime(booked_date, "%Y-%m-%d").date()
+                # Filter by the date part of booked_at
+                query = query.filter(func.date(Booking.booked_at) == filter_date)
+            except ValueError:
+                # If date parsing fails, ignore the filter
+                pass
+        
+        # Apply departure date filter
+        if departure_date:
+            try:
+                # Parse the date string (expected format: YYYY-MM-DD)
+                filter_date = datetime.datetime.strptime(departure_date, "%Y-%m-%d").date()
+                # Filter by the date part of flight departure_time
+                query = query.filter(func.date(Flight.departure_time) == filter_date)
+            except ValueError:
+                # If date parsing fails, ignore the filter
+                pass
+        
+        # Get total count before pagination
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * size
+        bookings = query.order_by(Booking.booked_at.desc()).offset(offset).limit(size).all()
+        
+        return bookings, total
     
     def delete_by_id(self, booking_id: int) -> bool:
         """Delete a booking by ID. Returns True if deleted, False if not found."""

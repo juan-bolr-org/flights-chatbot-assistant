@@ -40,8 +40,18 @@ class BookingUpdateArgs(BaseModel):
 class UserBookingsArgs(BaseModel):
     status: Optional[str] = Field(
         default=None,
-        description="Filter bookings by status (upcoming, past, booked, cancelled)"
+        description="Filter bookings by status (booked, cancelled, completed)"
     )
+    booked_date: Optional[str] = Field(
+        default=None,
+        description="Filter by booking date in YYYY-MM-DD format"
+    )
+    departure_date: Optional[str] = Field(
+        default=None,
+        description="Filter by departure date in YYYY-MM-DD format"
+    )
+    page: int = Field(1, description="Page number for pagination")
+    size: int = Field(10, description="Number of items per page")
 
 
 class FlightSearchTool(BaseTool):
@@ -283,8 +293,10 @@ class GetUserBookingsTool(BaseTool):
     
     name: str = "get_my_bookings"
     description: str = (
-        "Get the current user's flight bookings. Can filter by status (upcoming, past, booked, cancelled). "
-        "Use this when users ask about their reservations, bookings, or travel history."
+        "Get the current user's flight bookings with advanced filtering options. "
+        "Can filter by status (booked, cancelled, completed), booking date, departure date, "
+        "and supports pagination. Use this when users ask about their reservations, "
+        "bookings, travel history, or want to filter their bookings by specific criteria."
     )
     args_schema: type[BaseModel] = UserBookingsArgs
     return_direct: bool = False
@@ -298,14 +310,22 @@ class GetUserBookingsTool(BaseTool):
     async def _arun(
         self,
         status: Optional[str] = None,
+        booked_date: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Get user bookings asynchronously."""
         try:
             async with httpx.AsyncClient() as client:
-                params = {}
+                params = {"page": page, "size": size}
                 if status:
                     params["status"] = status
+                if booked_date:
+                    params["booked_date"] = booked_date
+                if departure_date:
+                    params["departure_date"] = departure_date
                     
                 response = await client.get(
                     f"{self.api_base_url}/bookings/user",
@@ -314,12 +334,29 @@ class GetUserBookingsTool(BaseTool):
                 )
                 
                 if response.status_code == 200:
-                    bookings = response.json()
-                    if not bookings:
-                        status_text = f" with status '{status}'" if status else ""
-                        return f"You have no bookings{status_text}."
+                    data = response.json()
+                    bookings = data.get("items", [])
+                    total = data.get("total", 0)
+                    pages = data.get("pages", 1)
+                    current_page = data.get("page", page)
+                    page_size = data.get("size", size)
                     
-                    result = f"Your bookings{' (' + status + ')' if status else ''} ({len(bookings)} total):\n\n"
+                    # Build filter description
+                    filter_parts = []
+                    if status:
+                        filter_parts.append(f"status: {status}")
+                    if booked_date:
+                        filter_parts.append(f"booked on: {booked_date}")
+                    if departure_date:
+                        filter_parts.append(f"departing on: {departure_date}")
+                    
+                    filter_desc = f" ({', '.join(filter_parts)})" if filter_parts else ""
+                    
+                    if not bookings:
+                        return f"You have no bookings{filter_desc}."
+                    
+                    result = f"Your bookings{filter_desc} (showing {len(bookings)} of {total} total, page {current_page} of {pages}):\n\n"
+                    
                     for booking in bookings:
                         flight_info = booking['flight']
                         departure_time = datetime.fromisoformat(flight_info['departure_time'].replace('Z', '+00:00'))
@@ -341,9 +378,14 @@ class GetUserBookingsTool(BaseTool):
                         
                         result += "\n"
                     
+                    # Add pagination info if there are more pages
+                    if pages > current_page:
+                        result += f"Use page={current_page + 1} to see more bookings."
+                    
                     return result
                 else:
-                    return f"Error retrieving bookings: {response.text}"
+                    error_detail = response.json().get('detail', 'Unknown error') if response.headers.get('content-type', '').startswith('application/json') else response.text
+                    return f"Error retrieving bookings: {error_detail}"
                     
         except Exception as e:
             return f"Error occurred while retrieving bookings: {str(e)}"
@@ -351,6 +393,10 @@ class GetUserBookingsTool(BaseTool):
     def _run(
         self,
         status: Optional[str] = None,
+        booked_date: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Not implemented for sync execution."""
@@ -446,7 +492,9 @@ def create_faqs_retriever_tool():
         "Can I book a flight through the chatbot? Yes, you can book flights by providing the flight ID and confirming your booking.",
         "How do I cancel a booking using the chatbot? You can cancel a booking by providing the booking ID and confirming the cancellation.",
         "Can the chatbot help me find flights? Yes, you can search for flights by providing the origin, destination, and departure date.",
-        "How do I check my bookings with the chatbot? You can retrieve your bookings by asking for your flight reservations, optionally filtering by status.",
+        "How do I check my bookings with the chatbot? You can retrieve your bookings by asking for your flight reservations. You can filter by status (booked, cancelled, completed), booking date, or departure date, and navigate through multiple pages if you have many bookings.",
+        "Can I filter my bookings when checking them? Yes, you can filter your bookings by status (booked, cancelled, completed), by the date you made the booking, or by the flight departure date. You can also specify how many bookings to show per page.",
+        "What booking statuses can I filter by? You can filter by 'booked' (active upcoming bookings), 'cancelled' (bookings you've cancelled), or 'completed' (flights that have already departed).",
         "What information do I need to book a flight? You need the flight ID to book a flight through the chatbot.",
         "Can I change my booking status using the chatbot? Yes, you can update your booking status to cancelled or other statuses as needed.",
     ]

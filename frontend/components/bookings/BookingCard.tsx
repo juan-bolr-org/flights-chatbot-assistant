@@ -20,6 +20,22 @@ export function BookingCard({ booking, onBookingUpdate }: BookingCardProps) {
     const canCancel = booking.status === 'booked' && 
                      new Date(flight.departure_time) > new Date();
 
+    // Determine status color and display
+    const getStatusInfo = (status: string) => {
+        switch (status) {
+            case 'cancelled':
+                return { color: 'red' as const, label: 'CANCELLED' };
+            case 'completed':
+                return { color: 'blue' as const, label: 'COMPLETED' };
+            case 'booked':
+                return { color: 'green' as const, label: 'BOOKED' };
+            default:
+                return { color: 'gray' as const, label: status.toUpperCase() };
+        }
+    };
+
+    const statusInfo = getStatusInfo(booking.status);
+
     const handleCancelBooking = async () => {
         if (!token) return;
         
@@ -43,8 +59,8 @@ export function BookingCard({ booking, onBookingUpdate }: BookingCardProps) {
                         {flight.origin} → {flight.destination}
                     </Text>
                     <Flex align="center" gap="2">
-                        <Badge color={booking.status === 'cancelled' ? 'red' : 'green'}>
-                            {booking.status.toUpperCase()}
+                        <Badge color={statusInfo.color}>
+                            {statusInfo.label}
                         </Badge>
                         {canCancel && (
                             <AlertDialog.Root>
