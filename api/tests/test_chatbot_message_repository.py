@@ -153,7 +153,7 @@ class TestChatbotMessageRepository:
         # Test offset
         messages = message_repo.find_by_user_id(sample_user.id, limit=2, offset=1)
         assert len(messages) == 2
-        assert messages[0].user_message == "Mensaje 1"
+        assert messages[0].user_message == 'Message 1'
 
     # ===== NEGATIVE TESTS =====
 

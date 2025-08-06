@@ -255,7 +255,7 @@ class FlightsAPIHelper:
             'azure-cognitiveservices-speech': 'azure.cognitiveservices.speech',
             'python-multipart': 'multipart',
             'pydub': 'pydub',
-            'audioop-lts': 'audioop',
+            'audioop-lts; python_version': 'audioop',
         }
         
         # Read requirements files
