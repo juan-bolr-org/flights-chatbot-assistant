@@ -26,15 +26,16 @@ export function FlightCard({ flight }: FlightCardProps) {
     const router = useRouter();
     const { user } = useUser();
     const handlePurchase = () => {
-        // Logic to handle flight purchase
-        console.log(`Purchasing flight with ID: ${flight.id}`);
         if (!user || !user.token) {
-            console.log('User is not logged in');
+            console.log('User is not logged in, redirecting to login');
+            router.push('/login?redirect=/flights');
             return;
         }
-        createBooking(flight.id.toString(), user.token.access_token)
-        router.push(`/bookings`);
         
+        // Logic to handle flight purchase
+        console.log(`Purchasing flight with ID: ${flight.id}`);
+        createBooking(flight.id.toString(), user.token.access_token);
+        router.push(`/bookings`);
     };
 
     return (
@@ -118,7 +119,7 @@ export function FlightCard({ flight }: FlightCardProps) {
 
                     <Flex gap="3" align="center">
                         <Button onClick={handlePurchase}>
-                            Purchase
+                            {user ? 'Purchase' : 'Sign in to Purchase'}
                         </Button>
                     </Flex>
                 </Flex>

@@ -2,7 +2,6 @@
 
 // Define routes that require authentication
 export const PROTECTED_ROUTES = [
-  '/flights',
   '/bookings',
   '/chat',
   '/test-auth',
@@ -12,6 +11,7 @@ export const PROTECTED_ROUTES = [
 // Define public routes (that don't require authentication)
 export const PUBLIC_ROUTES = [
   '/',
+  '/flights',
   '/login',
   '/register'
 ] as const;

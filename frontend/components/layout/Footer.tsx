@@ -30,35 +30,38 @@ export default function Footer() {
 
         <Box>
           <Text weight="bold" size="4" mb="2">
-            Navigation
+            Technologies
           </Text>
           <Flex direction="column" gap="1">
-            <RadixLink asChild>
-              <Link href="/flights">Flights</Link>
-            </RadixLink>
-            <RadixLink asChild>
-              <Link href="/bookings">My Bookings</Link>
-            </RadixLink>
-            <RadixLink asChild>
-              <Link href="/login">Sign In</Link>
-            </RadixLink>
+            <Text as="p" color="gray" highContrast>
+              React & Next.js
+            </Text>
+            <Text as="p" color="gray" highContrast>
+              LangGraph
+            </Text>
+            <Text as="p" color="gray" highContrast>
+              FastAPI
+            </Text>
+            <Text as="p" color="gray" highContrast>
+              SQLAlchemy
+            </Text>
           </Flex>
         </Box>
 
         <Box>
           <Text weight="bold" size="4" mb="2">
-            Follow us
+            More Technologies
           </Text>
           <Flex direction="column" gap="1">
-            <RadixLink asChild>
-              <a href="#">Instagram</a>
-            </RadixLink>
-            <RadixLink asChild>
-              <a href="#">Facebook</a>
-            </RadixLink>
-            <RadixLink asChild>
-              <a href="#">WhatsApp</a>
-            </RadixLink>
+            <Text as="p" color="gray" highContrast>
+              TypeScript
+            </Text>
+            <Text as="p" color="gray" highContrast>
+              Tailwind CSS
+            </Text>
+            <Text as="p" color="gray" highContrast>
+              Docker
+            </Text>
           </Flex>
         </Box>
       </Flex>

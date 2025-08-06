@@ -24,8 +24,17 @@ export function middleware(request: NextRequest) {
   // Check if the current path is protected
   const isProtected = isProtectedRoute(pathname);
   
+  // Check if the current path is public
+  const isPublic = isPublicRoute(pathname);
+  
   // Check if the current path is an auth route (login/register)
   const isAuth = isAuthRoute(pathname);
+
+  // If it's a public route, allow access without authentication
+  if (isPublic && !isAuth) {
+    console.log(`✅ Public route allowed: ${pathname}`);
+    return NextResponse.next();
+  }
 
   // If it's a protected route
   if (isProtected) {
