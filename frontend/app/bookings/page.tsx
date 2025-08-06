@@ -21,7 +21,7 @@ export default function BookingsPage() {
     const hasActiveFilters = Boolean(searchFilters && (searchFilters.status || searchFilters.bookedDate || searchFilters.departureDate));
     const hasFetched = useRef(false);
     const router = useRouter();
-    const { user } = useUser();
+    const { user, loading } = useUser();
     const token = useToken();
 
     const fetchBookings = async (page: number, filters?: BookingSearchFilters) => {
@@ -82,23 +82,12 @@ export default function BookingsPage() {
     };
 
     useEffect(() => {
-        if (hasFetched.current) return;
-        hasFetched.current = true;
-
-        const fetchInitialBookings = async () => {
-            try {
-                if (!user) {
-                    router.replace('/login');
-                    return;
-                }
-                await fetchBookings(currentPage);
-            } catch {
-                setError("Can't load your bookings. Please try again.");
-            }
-        };
-
-        fetchInitialBookings();
-    }, [router]);
+        // Only fetch if we have a user and haven't fetched yet
+        if (user && !hasFetched.current) {
+            hasFetched.current = true;
+            fetchBookings(currentPage);
+        }
+    }, [user, currentPage]);
 
     const goToNextPage = async () => {
         if (bookingData && currentPage < bookingData.pages) {
@@ -116,10 +105,25 @@ export default function BookingsPage() {
         }
     };
 
-    if (isLoading) {
+    // Show loading while checking authentication status
+    if (loading) {
         return (
             <div className="p-4 text-center">
                 <Text>Loading...</Text>
+            </div>
+        );
+    }
+
+    // Redirect to login if not authenticated
+    if (!user) {
+        router.replace('/login');
+        return null;
+    }
+
+    if (isLoading) {
+        return (
+            <div className="p-4 text-center">
+                <Text>Loading bookings...</Text>
             </div>
         );
     }

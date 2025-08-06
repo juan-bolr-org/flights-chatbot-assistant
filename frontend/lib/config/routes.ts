@@ -2,7 +2,6 @@
 
 // Define routes that require authentication
 export const PROTECTED_ROUTES = [
-  '/flights',
   '/bookings',
   '/chat',
   '/test-auth',
@@ -12,6 +11,7 @@ export const PROTECTED_ROUTES = [
 // Define public routes (that don't require authentication)
 export const PUBLIC_ROUTES = [
   '/',
+  '/flights',
   '/login',
   '/register'
 ] as const;
@@ -42,8 +42,12 @@ export const isProtectedRoute = (pathname: string): boolean => {
 };
 
 export const isPublicRoute = (pathname: string): boolean => {
-  return PUBLIC_ROUTES.includes(pathname as any) || 
-         pathname.startsWith('/register');
+  return PUBLIC_ROUTES.some(route => {
+    if (route === '/') {
+      return pathname === '/';
+    }
+    return pathname === route || pathname.startsWith(route + '/');
+  });
 };
 
 export const isAuthRoute = (pathname: string): boolean => {
