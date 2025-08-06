@@ -93,15 +93,17 @@ class BookingSqliteRepository(BookingRepository):
         if status_filter:
             if status_filter == "upcoming":
                 # Show booked flights that haven't departed yet
+                # Compare with naive datetime since database stores naive datetimes
                 query = query.join(Flight).filter(
                     Booking.status == "booked",
-                    Flight.departure_time > datetime.datetime.now(datetime.UTC)
+                    Flight.departure_time > datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
                 )
             elif status_filter == "past":
                 # Show flights that have departed or been cancelled
+                # Compare with naive datetime since database stores naive datetimes
                 query = query.join(Flight).filter(
                     or_(
-                        Flight.departure_time <= datetime.datetime.now(datetime.UTC),
+                        Flight.departure_time <= datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
                         Booking.status == "cancelled"
                     )
                 )

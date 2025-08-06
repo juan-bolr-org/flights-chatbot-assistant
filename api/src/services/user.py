@@ -73,7 +73,7 @@ class UserBusinessService(UserService):
             raise InvalidCredentialsError()
         
         expires_delta=datetime.timedelta(minutes=30)
-        expiration = datetime.datetime.now() + expires_delta
+        expiration = datetime.datetime.now(datetime.timezone.utc) + expires_delta
         updated_user = self.user_repo.update_token_expiration(db_user.id, expiration)
         access_token = self.crypto.create_access_token(data={"sub": updated_user.email}, expires_delta=expires_delta)
         

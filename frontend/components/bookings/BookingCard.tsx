@@ -17,7 +17,7 @@ export function BookingCard({ booking, onBookingUpdate }: BookingCardProps) {
     const token = useToken();
     const [isLoading, setIsLoading] = useState(false);
 
-    const canCancel = booking.status === 'active' && 
+    const canCancel = booking.status === 'booked' && 
                      new Date(flight.departure_time) > new Date();
 
     const handleCancelBooking = async () => {
