@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from routers import users_router, flights_router, bookings_router, chat_router, health_check_router
+from routers import users_router, flights_router, bookings_router, chat_router, health_check_router, speech_router
 from resources.app_resources import app_resources
 
 
@@ -50,6 +50,7 @@ app.include_router(flights_router)
 app.include_router(bookings_router)
 app.include_router(chat_router)
 app.include_router(health_check_router)
+app.include_router(speech_router)
 
 
 @app.get("/")

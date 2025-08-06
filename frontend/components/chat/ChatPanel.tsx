@@ -15,6 +15,7 @@ import { ExitIcon, PaperPlaneIcon, TrashIcon } from '@radix-ui/react-icons';
 import { sendChatMessage, getChatHistory, deleteChatHistory } from '@/lib/api/chat';
 import { AlertCircleIcon } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { AudioRecorder } from './AudioRecorder';
 
 type Message = {
     role: 'user' | 'bot';
@@ -149,6 +150,28 @@ export function ChatPanel({
         }
     };
 
+    const handleAudioTextReceived = async (text: string) => {
+        if (!text.trim() || !user?.token) return;
+
+        const userMessage: Message = { role: 'user', content: text };
+        setMessages((prev: Message[]) => [...prev, userMessage]);
+        setLoading(true);
+
+        try {
+            const botResponse = await sendChatMessage(user.token.access_token, text);
+            const botMessage: Message = { role: 'bot', content: botResponse };
+            setMessageCount(messageCount + 1);
+            setMessages((prev: Message[]) => [...prev, botMessage]);
+        } catch {
+            setMessages((prev: Message[]) => [
+                ...prev,
+                { role: 'bot', content: 'Sorry, chat is not available at the moment.' },
+            ]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleClearChat = async () => {
         if (!user?.token) return;
 
@@ -262,23 +285,33 @@ export function ChatPanel({
                 </Flex>
             </ScrollArea>
 
-            {user ? (
-                <Flex mt="3" gap="2" align="center">
-                    <TextArea
-                        placeholder="Write your message..."
-                        value={input}
-                        onChange={(e: { target: { value: string } }) => setInput(e.target.value)}
-                        onKeyDown={(e: { key: string; shiftKey: boolean; preventDefault: () => void }) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSend();
-                            }
-                        }}
-                        style={{ flex: 1 }}
+            {user?.token ? (
+                <Flex direction="column" mt="3" gap="3">
+                    {/* Audio Recording Component */}
+                    <AudioRecorder
+                        onTextReceived={handleAudioTextReceived}
+                        disabled={loading}
+                        token={user.token.access_token}
                     />
-                    <Button size="2" onClick={handleSend} disabled={loading}>
-                        {loading ? '...' : <PaperPlaneIcon />}
-                    </Button>
+                    
+                    {/* Text Input */}
+                    <Flex gap="2" align="center">
+                        <TextArea
+                            placeholder="Write your message..."
+                            value={input}
+                            onChange={(e: { target: { value: string } }) => setInput(e.target.value)}
+                            onKeyDown={(e: { key: string; shiftKey: boolean; preventDefault: () => void }) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            style={{ flex: 1 }}
+                        />
+                        <Button size="2" onClick={handleSend} disabled={loading}>
+                            {loading ? '...' : <PaperPlaneIcon />}
+                        </Button>
+                    </Flex>
                 </Flex>
             ) : (
                 <Callout.Root color="orange" mt="3">

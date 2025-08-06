@@ -3,6 +3,7 @@ from .booking import BookingService, BookingBusinessService, create_booking_serv
 from .flight import FlightService, FlightBusinessService, create_flight_service
 from .user import UserService, UserBusinessService, create_user_service
 from .health import HealthService, SystemHealthService, create_health_service
+from .speech import SpeechService, AzureSpeechService, create_speech_service
 
 __all__ = [
     "ChatService",
@@ -19,5 +20,8 @@ __all__ = [
     "create_user_service",
     "HealthService",
     "SystemHealthService",
-    "create_health_service"
+    "create_health_service",
+    "SpeechService",
+    "AzureSpeechService",
+    "create_speech_service"
 ]

@@ -31,6 +31,12 @@ class ErrorCode(Enum):
     # Chat errors
     CHAT_MESSAGE_SAVE_FAILED = "CHAT_MESSAGE_SAVE_FAILED"
     AGENT_INVOCATION_FAILED = "AGENT_INVOCATION_FAILED"
+    
+    # Speech errors
+    SPEECH_SERVICE_NOT_CONFIGURED = "SPEECH_SERVICE_NOT_CONFIGURED"
+    INVALID_AUDIO_FILE = "INVALID_AUDIO_FILE"
+    SPEECH_RECOGNITION_FAILED = "SPEECH_RECOGNITION_FAILED"
+    NO_SPEECH_DETECTED = "NO_SPEECH_DETECTED"
 
 
 class ApiException(Exception):
@@ -186,4 +192,41 @@ class AgentInvocationFailedError(ApiException):
             ErrorCode.AGENT_INVOCATION_FAILED,
             "Failed to process chat request",
             {"user_id": user_id, "error_details": error_details}
+        )
+
+
+# Speech-related exceptions
+class SpeechServiceNotConfiguredError(ApiException):
+    def __init__(self):
+        super().__init__(
+            ErrorCode.SPEECH_SERVICE_NOT_CONFIGURED,
+            "Azure Speech Service is not properly configured"
+        )
+
+
+class InvalidAudioFileError(ApiException):
+    def __init__(self, content_type: str = None):
+        details = {"content_type": content_type} if content_type else {}
+        super().__init__(
+            ErrorCode.INVALID_AUDIO_FILE,
+            "File must be a valid audio file",
+            details
+        )
+
+
+class SpeechRecognitionFailedError(ApiException):
+    def __init__(self, reason: str = None):
+        details = {"reason": reason} if reason else {}
+        super().__init__(
+            ErrorCode.SPEECH_RECOGNITION_FAILED,
+            "Speech recognition service failed to process the audio",
+            details
+        )
+
+
+class NoSpeechDetectedError(ApiException):
+    def __init__(self):
+        super().__init__(
+            ErrorCode.NO_SPEECH_DETECTED,
+            "No speech was detected in the audio file"
         )

@@ -137,6 +137,8 @@ class HelperConfig:
             'UVICORN_HOST', 'UVICORN_PORT', 'UVICORN_LOG_LEVEL', 'RELOAD',
             # Development/Debug
             'DEBUG', 'ENVIRONMENT', 'ENV', 'NODE_ENV',
+            # Azure speach
+            'AZURE_SPEECH_KEY', 'AZURE_SPEECH_REGION', 'AZURE_SPEECH_ENDPOINT',
         }
         
         loaded_count = 0
@@ -249,7 +251,11 @@ class FlightsAPIHelper:
             'pytest-mock': 'pytest_mock',
             'pytest-asyncio': 'pytest_asyncio',
             'pytest-cov': 'pytest_cov',
-            'opencensus-ext-azure': 'opencensus.ext.azure'
+            'opencensus-ext-azure': 'opencensus.ext.azure',
+            'azure-cognitiveservices-speech': 'azure.cognitiveservices.speech',
+            'python-multipart': 'multipart',
+            'pydub': 'pydub',
+            'audioop-lts': 'audioop',
         }
         
         # Read requirements files
