@@ -19,7 +19,7 @@ export function FloatingVideoAd({
 }: FloatingVideoAdProps) {
     const [isVisible, setIsVisible] = useState(true);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
-    const [isMuted, setIsMuted] = useState(true); // Start with audio for better ux
+    const [isMuted, setIsMuted] = useState(true); // Start muted for better UX
     const [isMinimized, setIsMinimized] = useState(false);
     const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
