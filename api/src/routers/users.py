@@ -82,9 +82,8 @@ def get_current_user_info(
     Get current user information based on JWT token.
     """
     try:
-        # For /me endpoint, we don't need the actual token since we have the user
-        # Create a dummy token for the service call - this could be refactored
-        user_response = user_service.get_current_user_info(current_user, "dummy_token")
+        # For /me endpoint, we don't need the token since we have the user
+        user_response = user_service.get_current_user_info(current_user)
         logger.info(f"Retrieved user info for user ID: {current_user.id}")
         return user_response
         
