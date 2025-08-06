@@ -20,6 +20,19 @@ class SecurityConstants:
     
     # Default secret key warning message
     DEFAULT_SECRET_KEY_WARNING = "please_guys_do_not_forget_to_set_a_secret_key"
+    
+    # Middleware Configuration - Paths that don't require authentication
+    EXCLUDED_PATHS = [
+        "/",
+        "/docs",
+        "/openapi.json", 
+        "/redoc",
+        "/health",
+        "/users/register",
+        "/users/login",
+        "/flights/search",  # Public flight search
+        "/flights/list"     # Public flight listing
+    ]
 
 class TimeConstants:
     """Time-related constants."""
@@ -77,3 +90,7 @@ def get_access_token_expire_minutes() -> int:
 def get_cookie_max_age_seconds() -> int:
     """Get the cookie max age in seconds based on token expiration time."""
     return get_access_token_expire_minutes() * 60  # Convert minutes to seconds
+
+def get_excluded_paths() -> list:
+    """Get the list of paths excluded from authentication."""
+    return SecurityConstants.EXCLUDED_PATHS

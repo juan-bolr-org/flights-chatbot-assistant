@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer
 from repository import User
 from schemas import ChatRequest, ChatResponse, ChatHistoryResponse
 from resources.dependencies import get_current_user
@@ -9,7 +8,6 @@ from exceptions import ApiException
 from utils.error_handlers import api_exception_to_http_exception
 
 router = APIRouter(prefix="/chat", tags=["chat"])
-security = HTTPBearer()
 logger = get_logger("chat_router")
 
 @router.post("", response_model=ChatResponse)

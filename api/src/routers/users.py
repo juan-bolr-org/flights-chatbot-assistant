@@ -76,14 +76,15 @@ def login(
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(
     current_user: User = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
     user_service: UserService = Depends(create_user_service)
 ):
     """
     Get current user information based on JWT token.
     """
     try:
-        user_response = user_service.get_current_user_info(current_user, credentials.credentials)
+        # For /me endpoint, we don't need the actual token since we have the user
+        # Create a dummy token for the service call - this could be refactored
+        user_response = user_service.get_current_user_info(current_user, "dummy_token")
         logger.info(f"Retrieved user info for user ID: {current_user.id}")
         return user_response
         

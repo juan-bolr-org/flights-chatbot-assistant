@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from routers import users_router, flights_router, bookings_router, chat_router, health_check_router, speech_router
 from resources.app_resources import app_resources
+from middleware.auth import JWTAuthMiddleware
+from constants import get_excluded_paths
 
 
 @asynccontextmanager
@@ -43,6 +45,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Add JWT Authentication Middleware
+app.add_middleware(JWTAuthMiddleware, excluded_paths=get_excluded_paths())
 
 # Include routers
 app.include_router(users_router)

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .chat import chat_manager
 from .crypto import crypto_manager, CryptoManager
@@ -36,11 +36,29 @@ def get_crypto_manager() -> CryptoManager:
     return crypto_manager
 
 
-def get_current_user(
+def get_current_user(request: Request) -> User:
+    """
+    Dependency function to get the current authenticated user from middleware.
+    The middleware validates the JWT token and stores the user in request.state.
+    """
+    try:
+        # Get user from request state (set by auth middleware)
+        user = getattr(request.state, 'current_user', None)
+        if user is None:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        return user
+    except AttributeError:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+
+def get_current_user_legacy(
     credentials: HTTPAuthorizationCredentials = Depends(security), 
     user_repository: UserRepository = Depends(create_user_repository)
 ) -> User:
-    """Dependency function to get the current authenticated user."""
+    """
+    Legacy dependency function for backwards compatibility.
+    Use get_current_user instead - this validates tokens independently of middleware.
+    """
     try:
         token = credentials.credentials
         crypto = crypto_manager
@@ -60,11 +78,18 @@ def get_current_user(
 
 
 def get_agent(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     user: User = Depends(get_current_user)
 ) -> CompiledStateGraph:
-    """Dependency function to get a configured agent for the current user."""
-    token = credentials.credentials
+    """
+    Dependency function to get a configured agent for the current user.
+    Uses JWT token from middleware state.
+    """
+    # Get token from request state (set by auth middleware)
+    token = getattr(request.state, 'jwt_token', None)
+    if not token:
+        raise HTTPException(status_code=401, detail="No authentication token available")
+    
     return chat_manager.create_agent(user_token=token, user_id=user.id)
     
 
