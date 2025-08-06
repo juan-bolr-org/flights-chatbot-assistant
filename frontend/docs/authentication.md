@@ -179,8 +179,8 @@ Enable console logs to see middleware behavior:
 
 The frontend integrates with these backend endpoints:
 
-- `POST /users/login` - User login (7-day token)
-- `POST /users/register` - User registration (7-day token)  
+- `POST /users/login` - User login (30-minute token)
+- `POST /users/register` - User registration (30-minute token)  
 - `POST /users/refresh` - Token refresh (30-minute token)
 - `GET /users/me` - Get current user info
 - `POST /users/logout` - Clear JWT cookie

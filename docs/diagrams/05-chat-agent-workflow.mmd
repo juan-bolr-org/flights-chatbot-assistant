@@ -1,0 +1,81 @@
+graph TB
+    subgraph UserInteraction["User Interaction"]
+        UserInput[User Message]
+        ChatUI[Chat Interface]
+    end
+    
+    subgraph APIProcessing["API Processing"]
+        ChatRouter[Chat Router]
+        ChatService[Chat Service]
+        Auth[Authentication Check]
+    end
+    
+    subgraph LangGraphAgent["LangGraph Agent"]
+        Agent[ReAct Agent]
+        Memory[Conversation Memory]
+        Planner[Action Planner]
+    end
+    
+    subgraph AvailableTools["Available Tools"]
+        SearchTool[Search Flights]
+        BookTool[Book Flight]
+        BookingsTool[Get Bookings]
+        CancelTool[Cancel Booking]
+        FAQTool[FAQ Search]
+    end
+    
+    subgraph BackendServices["Backend Services"]
+        FlightService[Flight Service]
+        BookingService[Booking Service]
+        FAQStore[FAQ Knowledge Base]
+    end
+    
+    subgraph Database["Database"]
+        FlightDB[Flight Data]
+        BookingDB[Booking Data]
+        ChatHistory[Chat History]
+    end
+    
+    UserInput --> ChatUI
+    ChatUI --> ChatRouter
+    ChatRouter --> Auth
+    Auth --> ChatService
+    ChatService --> Agent
+    
+    Agent --> Memory
+    Agent --> Planner
+    Planner --> SearchTool
+    Planner --> BookTool
+    Planner --> BookingsTool
+    Planner --> CancelTool
+    Planner --> FAQTool
+    
+    SearchTool --> FlightService
+    BookTool --> BookingService
+    BookingsTool --> BookingService
+    CancelTool --> BookingService
+    FAQTool --> FAQStore
+    
+    FlightService --> FlightDB
+    BookingService --> BookingDB
+    ChatService --> ChatHistory
+    
+    Agent -->|Final Response| ChatService
+    ChatService -->|Save Conversation| ChatHistory
+    ChatService --> ChatRouter
+    ChatRouter --> ChatUI
+    ChatUI --> UserInput
+    
+    classDef interaction fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef api fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef tools fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef services fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef database fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class UserInteraction interaction
+    class APIProcessing api
+    class LangGraphAgent agent
+    class AvailableTools tools
+    class BackendServices services
+    class Database database

@@ -1,0 +1,86 @@
+graph TB
+    subgraph RouterLayer["Router Layer"]
+        UserRouter[User Router]
+        FlightRouter[Flight Router]
+        BookingRouter[Booking Router]
+    end
+    
+    subgraph ServiceLayer["Service Layer"]
+        UserService[User Service]
+        FlightService[Flight Service]
+        BookingService[Booking Service]
+    end
+    
+    subgraph RepositoryAbstractions["Repository Abstractions"]
+        IUserRepo[UserRepository ABC]
+        IFlightRepo[FlightRepository ABC]
+        IBookingRepo[BookingRepository ABC]
+    end
+    
+    subgraph RepositoryImplementations["Repository Implementations"]
+        UserSQLite[UserSqliteRepository]
+        FlightSQLite[FlightSqliteRepository]
+        BookingSQLite[BookingSqliteRepository]
+    end
+    
+    subgraph DataModels["Data Models"]
+        UserModel[User Model]
+        FlightModel[Flight Model]
+        BookingModel[Booking Model]
+    end
+    
+    subgraph Database["Database"]
+        SQLite[(SQLite Database)]
+    end
+    
+    subgraph DependencyInjection["Dependency Injection"]
+        DI[create_*_repository]
+        Session[Database Session]
+    end
+    
+    UserRouter --> UserService
+    FlightRouter --> FlightService
+    BookingRouter --> BookingService
+    
+    UserService --> IUserRepo
+    FlightService --> IFlightRepo
+    BookingService --> IBookingRepo
+    BookingService --> IFlightRepo
+    
+    IUserRepo -.->|implements| UserSQLite
+    IFlightRepo -.->|implements| FlightSQLite
+    IBookingRepo -.->|implements| BookingSQLite
+    
+    UserSQLite --> UserModel
+    FlightSQLite --> FlightModel
+    BookingSQLite --> BookingModel
+    
+    UserModel --> SQLite
+    FlightModel --> SQLite
+    BookingModel --> SQLite
+    
+    DI --> UserSQLite
+    DI --> FlightSQLite
+    DI --> BookingSQLite
+    DI --> Session
+    Session --> SQLite
+    
+    UserService -.->|depends on| DI
+    FlightService -.->|depends on| DI
+    BookingService -.->|depends on| DI
+    
+    classDef router fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef abstract fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef impl fill:#f1f8e9,stroke:#388e3c,stroke-width:2px
+    classDef model fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef db fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef di fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    
+    class RouterLayer router
+    class ServiceLayer service
+    class RepositoryAbstractions abstract
+    class RepositoryImplementations impl
+    class DataModels model
+    class Database db
+    class DependencyInjection di
