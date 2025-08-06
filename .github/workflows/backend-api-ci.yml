@@ -1,0 +1,54 @@
+name: Backend API CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'api/**'
+      - .github/workflows/backend-api-ci.yml
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: flights-api
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd api
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Run tests
+        run: |
+          cd api
+          python -m pytest tests
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: api
+          push: false
+          tags: ${{ env.IMAGE_NAME }}:ci-${{ github.sha }}
