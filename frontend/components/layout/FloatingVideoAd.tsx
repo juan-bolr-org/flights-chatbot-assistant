@@ -14,12 +14,12 @@ interface FloatingVideoAdProps {
 export function FloatingVideoAd({ 
     videoSrc, 
     onClose, 
-    autoPlay = true, 
+    autoPlay = false, 
     showControls = true 
 }: FloatingVideoAdProps) {
     const [isVisible, setIsVisible] = useState(true);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
-    const [isMuted, setIsMuted] = useState(false); // Start with audio for better promotional experience
+    const [isMuted, setIsMuted] = useState(true); // Start muted for better UX
     const [isMinimized, setIsMinimized] = useState(false);
     const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);

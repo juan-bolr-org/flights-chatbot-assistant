@@ -38,6 +38,17 @@ export function FlightCard({ flight }: FlightCardProps) {
         router.push(`/bookings`);
     };
 
+    // Image selection based on id % 5
+    const imageNames = [
+        '/images/1.png',
+        '/images/2.png',
+        '/images/3.png',
+        '/images/4.png',
+        '/images/5.png',
+    ];
+    const imageIndex = (flight.id % 5);
+    const imageSrc = imageNames[imageIndex];
+
     return (
         <Card
             size="3"
@@ -54,7 +65,7 @@ export function FlightCard({ flight }: FlightCardProps) {
             {/* Image */}
             <Box style={{ position: 'relative', height: '12rem' }}>
                 <Image
-                    src={'/images/polvora.jpeg'}
+                    src={imageSrc}
                     alt="flight"
                     fill
                     style={{ objectFit: 'cover', borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
