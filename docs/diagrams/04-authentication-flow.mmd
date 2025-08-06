@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Middleware
+    participant API
+    participant Database
+    
+    User->>Frontend: Access protected route
+    Frontend->>Middleware: Check route protection
+    
+    alt No token exists
+        Middleware->>Frontend: Redirect to login
+        Frontend->>User: Show login page
+        User->>Frontend: Submit credentials
+        Frontend->>API: POST /users/login
+        API->>Database: Validate credentials
+        Database-->>API: User data
+        API-->>Frontend: JWT token (30 min)
+        Frontend->>Frontend: Store token in cookie
+        Frontend->>User: Redirect to intended page
+    else Token exists but expired
+        Middleware->>Frontend: Redirect to login
+        Frontend->>User: Show session expired
+    else Token valid
+        Middleware->>Frontend: Allow access
+        Frontend->>User: Show protected content
+    end
+    
+    Note over Frontend: Token monitoring every 30s
+    
+    Frontend->>Frontend: Check token expiration
+    
+    alt Token expires in 5 minutes
+        Frontend->>User: Show refresh popup
+        User->>Frontend: Choose to extend session
+        Frontend->>API: POST /users/refresh
+        API-->>Frontend: New JWT token (30 min)
+        Frontend->>Frontend: Update token
+    end

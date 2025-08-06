@@ -1,0 +1,51 @@
+graph TB
+    subgraph ClientLayer["Client Layer"]
+        Browser[Web Browser]
+    end
+    
+    subgraph Frontend["Frontend - Next.js"]
+        UI[React Components]
+        Auth[Authentication Layer]
+        Chat[Chat Interface]
+        API_Client[API Client]
+    end
+    
+    subgraph Backend["Backend - FastAPI"]
+        Router[FastAPI Routers]
+        Services[Business Services]
+        Repos[Repository Layer]
+        Models[SQLAlchemy Models]
+        DB[(SQLite Database)]
+    end
+    
+    subgraph AIServices["AI Services"]
+        Agent[LangGraph Agent]
+        Tools[Flight Tools]
+        Memory[Chat Memory]
+        OpenAI[OpenAI GPT-4]
+    end
+    
+    Browser --> UI
+    UI --> Auth
+    UI --> Chat
+    UI --> API_Client
+    
+    API_Client -->|HTTP/REST| Router
+    Router --> Services
+    Services --> Repos
+    Repos --> Models
+    Models --> DB
+    
+    Router -->|Chat Requests| Agent
+    Agent --> Tools
+    Agent --> Memory
+    Agent --> OpenAI
+    Tools --> Services
+    
+    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef ai fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    
+    class Frontend frontend
+    class Backend backend
+    class AIServices ai

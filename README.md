@@ -26,12 +26,12 @@ flights-chatbot-assistant/
 - **Styling**: Tailwind CSS 4, Radix UI Themes
 - **Form Management**: React Hook Form with Zod validation
 - **Language**: TypeScript 5
-- **Authentication**: JWT token-based authentication
+- **Authentication**: JWT token-based with automatic refresh
 
 **Backend:**
 - **Framework**: FastAPI with Python 3.12
 - **Database**: SQLite with SQLAlchemy ORM
-- **Authentication**: JWT with bcrypt password hashing
+- **Authentication**: JWT with bcrypt password hashing and token refresh
 - **AI Integration**: LangChain with OpenAI GPT-4.1 models
 - **Agent Framework**: LangGraph with ReAct agents
 - **Memory**: MemorySaver for conversation persistence
@@ -50,7 +50,9 @@ flights-chatbot-assistant/
 - ✅ User registration with email validation
 - ✅ Secure login with JWT authentication
 - ✅ Password hashing with bcrypt
-- ✅ Session management
+- ✅ Session management with automatic token refresh
+- ✅ Token expiration warnings (5 minutes before expiry)
+- ✅ Automatic session extension via popup interface
 
 ### Flight Operations
 - ✅ Flight search by origin, destination, and date
@@ -74,6 +76,7 @@ flights-chatbot-assistant/
 - ✅ Real-time chat interface
 - ✅ Flight cards with detailed information
 - ✅ User-friendly navigation and forms
+- ✅ Token expiration popup with session extension
 
 ## 🚀 Quick Start
 
@@ -154,8 +157,13 @@ frontend/
 │   │   ├── login/         # Login page
 │   │   └── register/      # Registration and success pages
 │   ├── flights/           # Flight listing page
+│   ├── bookings/          # Bookings management page
 │   └── layout.tsx         # Root layout with providers
 ├── components/            # Reusable UI components
+│   ├── auth/             # Authentication components
+│   │   ├── TokenManager.tsx      # Token monitoring and refresh
+│   │   ├── TokenRefreshPopup.tsx # Session extension popup
+│   │   └── TokenDebugInfo.tsx    # Development token info
 │   ├── chat/             # Chat-related components
 │   │   ├── ChatPanel.tsx  # Main chat interface
 │   │   └── FloatingChatButton.tsx # Floating chat button
@@ -168,8 +176,11 @@ frontend/
 │   │   ├── booking.ts   # Booking API calls
 │   │   ├── chat.ts      # Chat API calls
 │   │   └── flights.ts   # Flights API calls
+│   ├── hooks/           # Custom React hooks
+│   │   └── useTokenExpiration.ts # Token monitoring hook
 │   ├── types/           # TypeScript type definitions
 │   └── utils/           # Helper functions
+│       └── jwt.ts       # JWT parsing and validation
 └── styles/              # Global CSS styles
 ```
 
@@ -194,6 +205,8 @@ api/
 │   ├── models.py         # SQLAlchemy database models
 │   ├── db.py             # Database configuration
 │   └── main.py           # FastAPI application entry point
+├── docs/                 # API documentation
+│   └── token_refresh_endpoint.md # Token refresh endpoint docs
 ├── Dockerfile            # Container configuration
 ├── requirements.txt      # Python dependencies
 └── README.md            # API documentation
@@ -204,6 +217,9 @@ api/
 ### Authentication
 - `POST /users/register` - User registration
 - `POST /users/login` - User login
+- `POST /users/refresh` - Refresh JWT token (30-minute duration)
+- `POST /users/logout` - User logout
+- `GET /users/me` - Get current user information
 
 ### Flights
 - `GET /flights/list` - List all available flights
@@ -221,6 +237,34 @@ api/
 
 ### Health Check
 - `GET /health` - Service health status
+
+## 🔐 Authentication & Session Management
+
+### Token System
+- **Login/Register**: Returns 30-minute tokens for initial authentication
+- **Token Refresh**: Returns new 30-minute tokens via `/users/refresh` endpoint
+- **Automatic Monitoring**: Frontend checks token expiration every 30 seconds
+- **Session Extension**: Popup appears 5 minutes before token expiry
+
+### Security Features
+- HTTP-only cookies for token storage (30-minute lifetime)
+- Automatic token refresh without page reload
+- Client-side token validation for UX (server-side validation for security)
+- Secure logout with token cleanup
+- Expired token automatic redirect to login
+
+### Token Refresh Flow
+1. User receives initial 30-minute token on login/register
+2. Frontend monitors token expiration continuously (every 30 seconds)
+3. Popup appears 5 minutes before expiry offering session extension
+4. User can extend session (new 30-minute token) or dismiss popup
+5. Automatic redirect to login if token expires without refresh
+
+### Session Management Strategy
+- **Short-lived tokens** (30 minutes) minimize security risk if compromised
+- **Proactive refresh** via popup prevents session interruption
+- **User choice** to extend or let session expire naturally
+- **Seamless UX** with background monitoring and non-intrusive popups
 
 ## 🤖 AI Chatbot Implementation
 
@@ -331,6 +375,19 @@ bash curls.sh
 
 This script tests user registration, login, flight creation, and booking operations.
 
+## 📚 Documentation
+
+### API Documentation
+- [Token Refresh Endpoint](./api/docs/token_refresh_endpoint.md) - Detailed endpoint documentation
+- [API README](./api/README.md) - Backend API documentation
+
+### Frontend Documentation
+- [Token Refresh Popup Implementation](./frontend/docs/token-refresh-popup.md) - Frontend authentication features
+- [Authentication Flow](./frontend/docs/authentication.md) - User authentication documentation
+
+### Project Documentation
+- [User Stories](./user-stories.md) - Project requirements and user stories
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -348,3 +405,4 @@ This project is part of an educational assignment and is not intended for commer
 For support and questions:
 1. Review the user stories in [`user-stories.md`](./user-stories.md)
 2. Examine the test scripts in [`curls.sh`](./curls.sh)
+3. Check the documentation in respective `/docs` folders

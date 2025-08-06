@@ -1,0 +1,43 @@
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant BookingService
+    participant BookingRepo
+    participant FlightRepo
+    participant Database
+    
+    User->>Frontend: Select flight & click book
+    Frontend->>API: POST /bookings {flight_id}
+    API->>API: Authenticate user
+    API->>BookingService: create_booking(user, booking_data)
+    
+    BookingService->>FlightRepo: find_available_by_id(flight_id)
+    FlightRepo->>Database: SELECT * FROM flights WHERE id=? AND status='scheduled'
+    Database-->>FlightRepo: Flight data
+    FlightRepo-->>BookingService: Flight object
+    
+    alt Flight not available
+        BookingService-->>API: FlightNotAvailableError
+        API-->>Frontend: 404 Flight not available
+        Frontend-->>User: Show error message
+    else Flight available
+        BookingService->>BookingRepo: find_existing_booking(user_id, flight_id)
+        BookingRepo->>Database: SELECT * FROM bookings WHERE user_id=? AND flight_id=? AND status='booked'
+        Database-->>BookingRepo: Existing booking or null
+        BookingRepo-->>BookingService: Booking object or null
+        
+        alt Booking already exists
+            BookingService-->>API: BookingAlreadyExistsError
+            API-->>Frontend: 409 Booking already exists
+            Frontend-->>User: Show error message
+        else No existing booking
+            BookingService->>BookingRepo: create(user_id, flight_id)
+            BookingRepo->>Database: INSERT INTO bookings...
+            Database-->>BookingRepo: New booking ID
+            BookingRepo-->>BookingService: Booking object with flight data
+            BookingService-->>API: BookingResponse
+            API-->>Frontend: 201 Booking created
+            Frontend-->>User: Show success message
+        end
+    end
