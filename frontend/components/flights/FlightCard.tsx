@@ -38,7 +38,7 @@ export function FlightCard({ flight }: FlightCardProps) {
         router.push(`/bookings`);
     };
 
-    // Selección de imagen según id % 3
+    // Selección de imagen según id % 5
     const imageNames = [
         '/images/1.png',
         '/images/2.png',
