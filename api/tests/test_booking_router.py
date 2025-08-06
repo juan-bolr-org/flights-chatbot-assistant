@@ -16,9 +16,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from routers.bookings import router
 from services.booking import BookingService, create_booking_service
 from schemas.booking import BookingResponse, BookingCreate, BookingUpdate
-from schemas.flight import FlightResponse
+from schemas.flight import FlightResponse, PaginatedResponse
 from models import User, Booking, Flight
 from exceptions import (
+    ApiException, 
+    ErrorCode, 
     FlightNotAvailableError, 
     BookingAlreadyExistsError, 
     BookingNotFoundError,
@@ -396,8 +398,15 @@ class TestBookingRouter:
     
     def test_get_user_bookings_success(self, client, mock_booking_service, sample_booking_list):
         """Test successful retrieval of user bookings."""
-        # Setup mock
-        mock_booking_service.get_user_bookings.return_value = sample_booking_list
+        # Setup mock with PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=sample_booking_list,
+            total=len(sample_booking_list),
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute
         response = client.get("/bookings/user")
@@ -405,11 +414,13 @@ class TestBookingRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 2
-        assert data[0]["id"] == 1
-        assert data[0]["status"] == "booked"
-        assert data[1]["id"] == 2
-        assert data[1]["status"] == "cancelled"
+        assert len(data["items"]) == 2
+        assert data["items"][0]["id"] == 1
+        assert data["items"][0]["status"] == "booked"
+        assert data["items"][1]["id"] == 2
+        assert data["items"][1]["status"] == "cancelled"
+        assert data["total"] == 2
+        assert data["page"] == 1
         
         # Verify service was called
         mock_booking_service.get_user_bookings.assert_called_once()
@@ -419,8 +430,15 @@ class TestBookingRouter:
         # Filter to only booked bookings
         booked_bookings = [b for b in sample_booking_list if b.status == "booked"]
         
-        # Setup mock
-        mock_booking_service.get_user_bookings.return_value = booked_bookings
+        # Setup mock with PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=booked_bookings,
+            total=len(booked_bookings),
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute
         response = client.get("/bookings/user?status=booked")
@@ -428,16 +446,24 @@ class TestBookingRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["status"] == "booked"
+        assert len(data["items"]) == 1
+        assert data["items"][0]["status"] == "booked"
+        assert data["total"] == 1
         
         # Verify service was called with filter
         mock_booking_service.get_user_bookings.assert_called_once()
     
     def test_get_user_bookings_empty(self, client, mock_booking_service):
         """Test retrieval of user bookings when user has no bookings."""
-        # Setup mock
-        mock_booking_service.get_user_bookings.return_value = []
+        # Setup mock with empty PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=0
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute
         response = client.get("/bookings/user")
@@ -445,7 +471,8 @@ class TestBookingRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 0
+        assert len(data["items"]) == 0
+        assert data["total"] == 0
         
         # Verify service was called
         mock_booking_service.get_user_bookings.assert_called_once()
@@ -455,8 +482,15 @@ class TestBookingRouter:
         # Filter to only upcoming bookings
         upcoming_bookings = [b for b in sample_booking_list if b.status == "booked"]
         
-        # Setup mock
-        mock_booking_service.get_user_bookings.return_value = upcoming_bookings
+        # Setup mock with PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=upcoming_bookings,
+            total=len(upcoming_bookings),
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute
         response = client.get("/bookings/user?status=upcoming")
@@ -464,8 +498,9 @@ class TestBookingRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["status"] == "booked"
+        assert len(data["items"]) == 1
+        assert data["items"][0]["status"] == "booked"
+        assert data["total"] == 1
         
         # Verify service was called with filter
         mock_booking_service.get_user_bookings.assert_called_once()
@@ -475,8 +510,15 @@ class TestBookingRouter:
         # Filter to cancelled bookings (representing past)
         past_bookings = [b for b in sample_booking_list if b.status == "cancelled"]
         
-        # Setup mock
-        mock_booking_service.get_user_bookings.return_value = past_bookings
+        # Setup mock with PaginatedResponse
+        paginated_response = PaginatedResponse(
+            items=past_bookings,
+            total=len(past_bookings),
+            page=1,
+            size=10,
+            pages=1
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute
         response = client.get("/bookings/user?status=past")
@@ -484,8 +526,9 @@ class TestBookingRouter:
         # Verify
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["status"] == "cancelled"
+        assert len(data["items"]) == 1
+        assert data["items"][0]["status"] == "cancelled"
+        assert data["total"] == 1
         
         # Verify service was called with filter
         mock_booking_service.get_user_bookings.assert_called_once()
@@ -575,7 +618,14 @@ class TestBookingRouter:
         mock_booking_service.create_booking.return_value = sample_booking_response
         mock_booking_service.update_booking.return_value = sample_cancelled_booking_response
         mock_booking_service.delete_booking.return_value = {"message": "success"}
-        mock_booking_service.get_user_bookings.return_value = []
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=0
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Test create booking endpoint
         client.post("/bookings", json={"flight_id": 1})
@@ -621,7 +671,14 @@ class TestBookingRouter:
         client = TestClient(app)
         
         # Mock service response
-        mock_booking_service.get_user_bookings.return_value = []
+        paginated_response = PaginatedResponse(
+            items=[],
+            total=0,
+            page=1,
+            size=10,
+            pages=0
+        )
+        mock_booking_service.get_user_bookings.return_value = paginated_response
         
         # Execute request
         response = client.get("/bookings/user")

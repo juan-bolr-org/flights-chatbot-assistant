@@ -114,9 +114,10 @@ class TestFlightRepository:
         flight1 = flight_repo.create(**sample_flight_data)
         flight2 = flight_repo.create(**sample_flight_data_2)
         
-        all_flights = flight_repo.list_all()
+        all_flights, total = flight_repo.list_all()
         
         assert len(all_flights) == 2
+        assert total == 2
         flight_ids = [f.id for f in all_flights]
         assert flight1.id in flight_ids
         assert flight2.id in flight_ids
@@ -126,9 +127,10 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Search for the flight using date string
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
         
         assert len(flights) == 1
+        assert total == 1
         assert flights[0].origin == "New York"
         assert flights[0].destination == "Los Angeles"
         assert flights[0].status == "scheduled"
@@ -138,9 +140,10 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Search with different case
-        flights = flight_repo.search_flights("new york", "los angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("new york", "los angeles", "2025-12-25")
         
         assert len(flights) == 1
+        assert total == 1
         assert flights[0].origin == "New York"
         assert flights[0].destination == "Los Angeles"
     
@@ -149,9 +152,10 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Search with partial names
-        flights = flight_repo.search_flights("York", "Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("York", "Angeles", "2025-12-25")
         
         assert len(flights) == 1
+        assert total == 1
         assert flights[0].origin == "New York"
         assert flights[0].destination == "Los Angeles"
     
@@ -166,9 +170,10 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Search should only return scheduled flight
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
         
         assert len(flights) == 1
+        assert total == 1
         assert flights[0].id == scheduled_flight.id
         assert flights[0].status == "scheduled"
     
@@ -192,9 +197,10 @@ class TestFlightRepository:
         sample_flight_data_2["departure_time"] = datetime(2025, 12, 25, 20, 0, 0, tzinfo=timezone.utc)
         flight2 = flight_repo.create(**sample_flight_data_2)
         
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
         
         assert len(flights) == 2
+        assert total == 2
         flight_ids = [f.id for f in flights]
         assert flight1.id in flight_ids
         assert flight2.id in flight_ids
@@ -211,16 +217,18 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Search for different route
-        flights = flight_repo.search_flights("Boston", "Seattle", "2025-12-25")
+        flights, total = flight_repo.search_flights("Boston", "Seattle", "2025-12-25")
         assert len(flights) == 0
+        assert total == 0
     
     def test_search_flights_different_date(self, flight_repo, sample_flight_data):
         """Test searching flights on different date."""
         flight_repo.create(**sample_flight_data)
         
         # Search for different date
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-26")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-26")
         assert len(flights) == 0
+        assert total == 0
     
     def test_search_flights_invalid_date_format(self, flight_repo):
         """Test searching flights with invalid date format."""
@@ -247,8 +255,9 @@ class TestFlightRepository:
     
     def test_list_all_empty(self, flight_repo):
         """Test listing flights when no flights exist."""
-        all_flights = flight_repo.list_all()
+        all_flights, total = flight_repo.list_all()
         assert len(all_flights) == 0
+        assert total == 0
     
     # ===== EDGE CASES =====
     
@@ -284,9 +293,10 @@ class TestFlightRepository:
         sample_flight_data["departure_time"] = datetime(2025, 12, 25, 23, 59, 59, tzinfo=timezone.utc)
         flight = flight_repo.create(**sample_flight_data)
         
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
         
         assert len(flights) == 1
+        assert total == 1
         assert flights[0].id == flight.id
     
     def test_search_flights_next_day_exclusion(self, flight_repo, sample_flight_data):
@@ -296,8 +306,9 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Should not find flight when searching previous day
-        flights = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
+        flights, total = flight_repo.search_flights("New York", "Los Angeles", "2025-12-25")
         assert len(flights) == 0
+        assert total == 0
     
     def test_create_flight_with_same_departure_arrival_time(self, flight_repo, sample_flight_data):
         """Test creating flight with same departure and arrival time."""
@@ -325,8 +336,9 @@ class TestFlightRepository:
         flight_repo.create(**sample_flight_data)
         
         # Empty strings should match any flight (due to LIKE %%)
-        flights = flight_repo.search_flights("", "", "2025-12-25")
+        flights, total = flight_repo.search_flights("", "", "2025-12-25")
         assert len(flights) == 1
+        assert total == 1
     
     def test_price_precision(self, flight_repo, sample_flight_data):
         """Test that price is stored as integer correctly."""

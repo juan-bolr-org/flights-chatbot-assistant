@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from repository import User
-from schemas import BookingCreate, BookingResponse, BookingUpdate
+from schemas import BookingCreate, BookingResponse, BookingUpdate, PaginatedResponse
 from resources.dependencies import get_current_user
 from resources.logging import get_logger
 from services import BookingService, create_booking_service
@@ -72,14 +72,18 @@ def delete_booking(
             detail=f"Error deleting booking: {str(e)}"
         )
 
-@router.get("/user", response_model=List[BookingResponse])
+@router.get("/user", response_model=PaginatedResponse[BookingResponse])
 def get_user_bookings(
-    status: Optional[str] = None, 
+    status: Optional[str] = Query(None, description="Filter by status: booked, cancelled, completed"), 
+    booked_date: Optional[str] = Query(None, description="Filter by booking date (YYYY-MM-DD format)"),
+    departure_date: Optional[str] = Query(None, description="Filter by departure date (YYYY-MM-DD format)"),
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(10, ge=1, le=50, description="Page size"),
     current_user: User = Depends(get_current_user), 
     booking_service: BookingService = Depends(create_booking_service)
 ):  
     try:
-        bookings = booking_service.get_user_bookings(current_user, status)
+        bookings = booking_service.get_user_bookings(current_user, status, booked_date, departure_date, page, size)
         return bookings
         
     except Exception as e:

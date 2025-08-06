@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from services.flight import FlightBusinessService
 from repository.flight import FlightRepository
 from models import Flight, User
-from schemas.flight import FlightCreate, FlightSearch, FlightResponse
+from schemas.flight import FlightCreate, FlightSearch, FlightResponse, PaginatedResponse
 from exceptions import InvalidDateFormatError, InvalidFlightTimesError, InvalidFlightPriceError, ErrorCode
 
 
@@ -108,41 +108,49 @@ class TestFlightService:
     
     def test_search_flights_success(self, flight_service, mock_flight_repo, sample_flight_list):
         """Test successful flight search."""
-        # Setup mock
-        mock_flight_repo.search_flights.return_value = sample_flight_list
+        # Setup mock to return tuple (flights, total)
+        mock_flight_repo.search_flights.return_value = (sample_flight_list, 2)
         
         # Execute
         result = flight_service.search_flights("New York", "Los Angeles", "2025-12-25")
         
-        # Verify - now expecting FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 2
-        assert isinstance(result[0], FlightResponse)
-        assert result[0].id == 1
-        assert result[0].origin == "New York"
-        assert result[0].destination == "Los Angeles"
-        assert isinstance(result[1], FlightResponse)
-        assert result[1].id == 2
-        assert result[1].origin == "Chicago"
-        assert result[1].destination == "Miami"
+        # Verify - now expecting PaginatedResponse
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 2
+        assert result.total == 2
+        assert result.page == 1
+        assert result.size == 10
+        assert result.pages == 1
+        assert isinstance(result.items[0], FlightResponse)
+        assert result.items[0].id == 1
+        assert result.items[0].origin == "New York"
+        assert result.items[0].destination == "Los Angeles"
+        assert isinstance(result.items[1], FlightResponse)
+        assert result.items[1].id == 2
+        assert result.items[1].origin == "Chicago"
+        assert result.items[1].destination == "Miami"
         
         # Verify repository call
-        mock_flight_repo.search_flights.assert_called_once_with("New York", "Los Angeles", "2025-12-25")
+        mock_flight_repo.search_flights.assert_called_once_with("New York", "Los Angeles", "2025-12-25", 1, 10)
     
     def test_search_flights_empty_result(self, flight_service, mock_flight_repo):
         """Test flight search with no results."""
-        # Setup mock
-        mock_flight_repo.search_flights.return_value = []
+        # Setup mock to return tuple (empty flights, total 0)
+        mock_flight_repo.search_flights.return_value = ([], 0)
         
         # Execute
         result = flight_service.search_flights("Boston", "Seattle", "2025-12-25")
         
-        # Verify - now expecting empty list of FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 0
+        # Verify - now expecting PaginatedResponse with empty items
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 0
+        assert result.total == 0
+        assert result.page == 1
+        assert result.size == 10
+        assert result.pages == 1
         
         # Verify repository call
-        mock_flight_repo.search_flights.assert_called_once_with("Boston", "Seattle", "2025-12-25")
+        mock_flight_repo.search_flights.assert_called_once_with("Boston", "Seattle", "2025-12-25", 1, 10)
     
     def test_search_flights_invalid_date_format(self, flight_service, mock_flight_repo):
         """Test flight search with invalid date format."""
@@ -158,23 +166,23 @@ class TestFlightService:
         assert exc_info.value.details["provided_date"] == "2025/12/25"
         
         # Verify repository call
-        mock_flight_repo.search_flights.assert_called_once_with("New York", "Los Angeles", "2025/12/25")
+        mock_flight_repo.search_flights.assert_called_once_with("New York", "Los Angeles", "2025/12/25", 1, 10)
     
     def test_search_flights_case_handling(self, flight_service, mock_flight_repo, sample_flight_list):
         """Test flight search with different case inputs."""
-        # Setup mock
-        mock_flight_repo.search_flights.return_value = sample_flight_list
+        # Setup mock to return tuple (flights, total)
+        mock_flight_repo.search_flights.return_value = (sample_flight_list, 2)
         
         # Execute with different case
         result = flight_service.search_flights("new york", "LOS ANGELES", "2025-12-25")
         
-        # Verify - now expecting FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 2
-        assert isinstance(result[0], FlightResponse)
+        # Verify - now expecting PaginatedResponse
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 2
+        assert isinstance(result.items[0], FlightResponse)
         
         # Verify repository call preserves original case
-        mock_flight_repo.search_flights.assert_called_once_with("new york", "LOS ANGELES", "2025-12-25")
+        mock_flight_repo.search_flights.assert_called_once_with("new york", "LOS ANGELES", "2025-12-25", 1, 10)
     
     # ===== CREATE FLIGHT TESTS =====
     
@@ -277,39 +285,47 @@ class TestFlightService:
     
     def test_list_flights_success(self, flight_service, mock_flight_repo, sample_flight_list):
         """Test successful flight listing."""
-        # Setup mock
-        mock_flight_repo.list_all.return_value = sample_flight_list
+        # Setup mock to return tuple (flights, total)
+        mock_flight_repo.list_all.return_value = (sample_flight_list, 2)
         
         # Execute
         result = flight_service.list_flights()
         
-        # Verify - now expecting FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 2
-        assert isinstance(result[0], FlightResponse)
-        assert result[0].id == 1
-        assert result[0].origin == "New York"
-        assert isinstance(result[1], FlightResponse)
-        assert result[1].id == 2
-        assert result[1].origin == "Chicago"
+        # Verify - now expecting PaginatedResponse
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 2
+        assert result.total == 2
+        assert result.page == 1
+        assert result.size == 10
+        assert result.pages == 1
+        assert isinstance(result.items[0], FlightResponse)
+        assert result.items[0].id == 1
+        assert result.items[0].origin == "New York"
+        assert isinstance(result.items[1], FlightResponse)
+        assert result.items[1].id == 2
+        assert result.items[1].origin == "Chicago"
         
         # Verify repository call
-        mock_flight_repo.list_all.assert_called_once()
+        mock_flight_repo.list_all.assert_called_once_with(1, 10)
     
     def test_list_flights_empty(self, flight_service, mock_flight_repo):
         """Test flight listing when no flights exist."""
-        # Setup mock
-        mock_flight_repo.list_all.return_value = []
+        # Setup mock to return tuple (empty flights, total 0)
+        mock_flight_repo.list_all.return_value = ([], 0)
         
         # Execute
         result = flight_service.list_flights()
         
-        # Verify - now expecting empty list of FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 0
+        # Verify - now expecting PaginatedResponse with empty items
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 0
+        assert result.total == 0
+        assert result.page == 1
+        assert result.size == 10
+        assert result.pages == 1
         
         # Verify repository call
-        mock_flight_repo.list_all.assert_called_once()
+        mock_flight_repo.list_all.assert_called_once_with(1, 10)
     
     def test_list_flights_repository_error(self, flight_service, mock_flight_repo):
         """Test flight listing when repository raises error."""
@@ -321,25 +337,25 @@ class TestFlightService:
             flight_service.list_flights()
         
         # Verify repository was called
-        mock_flight_repo.list_all.assert_called_once()
+        mock_flight_repo.list_all.assert_called_once_with(1, 10)
     
     # ===== EDGE CASES =====
     
     def test_search_flights_with_special_characters(self, flight_service, mock_flight_repo, sample_flight_list):
         """Test flight search with special characters in city names."""
-        # Setup mock
-        mock_flight_repo.search_flights.return_value = sample_flight_list
+        # Setup mock to return tuple (flights, total)
+        mock_flight_repo.search_flights.return_value = (sample_flight_list, 2)
         
         # Execute with special characters
         result = flight_service.search_flights("São Paulo", "México City", "2025-12-25")
         
-        # Verify - now expecting FlightResponse objects
-        assert isinstance(result, list)
-        assert len(result) == 2
-        assert isinstance(result[0], FlightResponse)
+        # Verify - now expecting PaginatedResponse
+        assert isinstance(result, PaginatedResponse)
+        assert len(result.items) == 2
+        assert isinstance(result.items[0], FlightResponse)
         
         # Verify repository call preserves special characters
-        mock_flight_repo.search_flights.assert_called_once_with("São Paulo", "México City", "2025-12-25")
+        mock_flight_repo.search_flights.assert_called_once_with("São Paulo", "México City", "2025-12-25", 1, 10)
     
     def test_create_flight_extreme_dates(self, flight_service, mock_flight_repo, sample_user, sample_db_flight):
         """Test flight creation with extreme future dates."""

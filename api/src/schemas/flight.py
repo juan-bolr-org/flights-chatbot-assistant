@@ -1,11 +1,24 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Generic, TypeVar
 import datetime
 
+T = TypeVar('T')
+
 class FlightSearch(BaseModel):
-    origin: str
-    destination: str
-    departure_date: str  # YYYY-MM-DD format
+    origin: Optional[str] = None
+    destination: Optional[str] = None
+    departure_date: Optional[str] = None  # YYYY-MM-DD format
+
+class PaginationParams(BaseModel):
+    page: int = 1
+    size: int = 10
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 class FlightCreate(BaseModel):
     origin: str

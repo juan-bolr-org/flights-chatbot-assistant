@@ -16,9 +16,16 @@ logger = get_logger("chatbot_tools")
 
 # Pydantic models for tool arguments
 class FlightSearchArgs(BaseModel):
-    origin: str = Field(description="Origin airport code or city name")
-    destination: str = Field(description="Destination airport code or city name")
-    departure_date: str = Field(description="Departure date in YYYY-MM-DD format")
+    origin: Optional[str] = Field(None, description="Origin airport code or city name (optional)")
+    destination: Optional[str] = Field(None, description="Destination airport code or city name (optional)")
+    departure_date: Optional[str] = Field(None, description="Departure date in YYYY-MM-DD format (optional)")
+    page: int = Field(1, description="Page number for pagination")
+    size: int = Field(10, description="Number of items per page")
+
+
+class FlightListArgs(BaseModel):
+    page: int = Field(1, description="Page number for pagination")
+    size: int = Field(10, description="Number of items per page")
 
 
 class BookingCreateArgs(BaseModel):
@@ -33,8 +40,18 @@ class BookingUpdateArgs(BaseModel):
 class UserBookingsArgs(BaseModel):
     status: Optional[str] = Field(
         default=None,
-        description="Filter bookings by status (upcoming, past, booked, cancelled)"
+        description="Filter bookings by status (booked, cancelled, completed)"
     )
+    booked_date: Optional[str] = Field(
+        default=None,
+        description="Filter by booking date in YYYY-MM-DD format"
+    )
+    departure_date: Optional[str] = Field(
+        default=None,
+        description="Filter by departure date in YYYY-MM-DD format"
+    )
+    page: int = Field(1, description="Page number for pagination")
+    size: int = Field(10, description="Number of items per page")
 
 
 class FlightSearchTool(BaseTool):
@@ -42,7 +59,8 @@ class FlightSearchTool(BaseTool):
     
     name: str = "search_flights"
     description: str = (
-        "Search for available flights based on origin, destination, and departure date. "
+        "Search for available flights. All parameters are optional - you can search by origin only, "
+        "destination only, departure date only, or any combination. "
         "Useful when users ask about flight availability, schedules, or want to find flights."
     )
     args_schema: type[BaseModel] = FlightSearchArgs
@@ -55,41 +73,68 @@ class FlightSearchTool(BaseTool):
 
     async def _arun(
         self,
-        origin: str,
-        destination: str,
-        departure_date: str,
+        origin: Optional[str] = None,
+        destination: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Search for flights asynchronously."""
         try:
+            # Build search params, only including non-None values
+            params = {"page": page, "size": size}
+            if origin:
+                params["origin"] = origin
+            if destination:
+                params["destination"] = destination
+            if departure_date:
+                params["departure_date"] = departure_date
+            
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     f"{self.api_base_url}/flights/search",
-                    params={
-                        "origin": origin,
-                        "destination": destination,
-                        "departure_date": departure_date
-                    },
+                    params=params,
                     headers={"Authorization": f"Bearer {self.user_token}"}
                 )
                 
                 if response.status_code == 200:
-                    flights = response.json()
-                    if not flights:
-                        return f"No flights found from {origin} to {destination} on {departure_date}"
+                    data = response.json()
+                    flights = data.get("items", [])
+                    total = data.get("total", 0)
+                    pages = data.get("pages", 1)
                     
-                    result = f"Found {len(flights)} flights from {origin} to {destination} on {departure_date}:\n\n"
+                    # Build search description
+                    search_parts = []
+                    if origin:
+                        search_parts.append(f"from {origin}")
+                    if destination:
+                        search_parts.append(f"to {destination}")
+                    if departure_date:
+                        search_parts.append(f"on {departure_date}")
+                    
+                    search_desc = " ".join(search_parts) if search_parts else "all flights"
+                    
+                    if not flights:
+                        return f"No flights found {search_desc}."
+                    
+                    result = f"Found {total} flights {search_desc} (showing page {page} of {pages}):\n\n"
                     for flight in flights:
                         departure_time = datetime.fromisoformat(flight['departure_time'].replace('Z', '+00:00'))
                         arrival_time = datetime.fromisoformat(flight['arrival_time'].replace('Z', '+00:00'))
                         result += (
                             f"Flight ID: {flight['id']}\n"
+                            f"Route: {flight['origin']} → {flight['destination']}\n"
                             f"Airline: {flight['airline']}\n"
                             f"Departure: {departure_time.strftime('%Y-%m-%d %H:%M')}\n"
                             f"Arrival: {arrival_time.strftime('%Y-%m-%d %H:%M')}\n"
                             f"Price: ${flight['price']}\n"
                             f"Status: {flight['status']}\n\n"
                         )
+                    
+                    if pages > page:
+                        result += f"Use page={page + 1} to see more results."
+                    
                     return result
                 else:
                     return f"Error searching flights: {response.text}"
@@ -99,9 +144,11 @@ class FlightSearchTool(BaseTool):
 
     def _run(
         self,
-        origin: str,
-        destination: str, 
-        departure_date: str,
+        origin: Optional[str] = None,
+        destination: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Not implemented for sync execution."""
@@ -113,9 +160,10 @@ class ListFlightsTool(BaseTool):
     
     name: str = "list_all_flights"
     description: str = (
-        "Get a list of all available flights. "
+        "Get a paginated list of all available flights. "
         "Useful when users want to see all flight options or browse available flights."
     )
+    args_schema: type[BaseModel] = FlightListArgs
     return_direct: bool = False
     user_token: str
     api_base_url: str
@@ -125,6 +173,8 @@ class ListFlightsTool(BaseTool):
 
     async def _arun(
         self,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """List all flights asynchronously."""
@@ -132,26 +182,33 @@ class ListFlightsTool(BaseTool):
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     f"{self.api_base_url}/flights/list",
+                    params={"page": page, "size": size},
                     headers={"Authorization": f"Bearer {self.user_token}"}
                 )
                 
                 if response.status_code == 200:
-                    flights = response.json()
+                    data = response.json()
+                    flights = data.get("items", [])
+                    total = data.get("total", 0)
+                    pages = data.get("pages", 1)
+                    
                     if not flights:
                         return "No flights available at the moment."
                     
-                    result = f"Available flights ({len(flights)} total):\n\n"
-                    for flight in flights[:10]:  # Limit to first 10 to avoid too long responses
+                    result = f"Available flights ({total} total, page {page} of {pages}):\n\n"
+                    for flight in flights:
                         departure_time = datetime.fromisoformat(flight['departure_time'].replace('Z', '+00:00'))
+                        arrival_time = datetime.fromisoformat(flight['arrival_time'].replace('Z', '+00:00'))
                         result += (
                             f"Flight ID: {flight['id']} | {flight['origin']} → {flight['destination']}\n"
                             f"Airline: {flight['airline']}\n"
                             f"Departure: {departure_time.strftime('%Y-%m-%d %H:%M')}\n"
+                            f"Arrival: {arrival_time.strftime('%Y-%m-%d %H:%M')}\n"
                             f"Price: ${flight['price']} | Status: {flight['status']}\n\n"
                         )
                     
-                    if len(flights) > 10:
-                        result += f"... and {len(flights) - 10} more flights available."
+                    if pages > page:
+                        result += f"Use page={page + 1} to see more flights."
                     
                     return result
                 else:
@@ -160,7 +217,12 @@ class ListFlightsTool(BaseTool):
         except Exception as e:
             return f"Error occurred while listing flights: {str(e)}"
 
-    def _run(self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None) -> str:
+    def _run(
+        self,
+        page: int = 1,
+        size: int = 10,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -> str:
         """Not implemented for sync execution."""
         raise NotImplementedError("This tool only supports async execution")
 
@@ -231,8 +293,10 @@ class GetUserBookingsTool(BaseTool):
     
     name: str = "get_my_bookings"
     description: str = (
-        "Get the current user's flight bookings. Can filter by status (upcoming, past, booked, cancelled). "
-        "Use this when users ask about their reservations, bookings, or travel history."
+        "Get the current user's flight bookings with advanced filtering options. "
+        "Can filter by status (booked, cancelled, completed), booking date, departure date, "
+        "and supports pagination. Use this when users ask about their reservations, "
+        "bookings, travel history, or want to filter their bookings by specific criteria."
     )
     args_schema: type[BaseModel] = UserBookingsArgs
     return_direct: bool = False
@@ -246,14 +310,22 @@ class GetUserBookingsTool(BaseTool):
     async def _arun(
         self,
         status: Optional[str] = None,
+        booked_date: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Get user bookings asynchronously."""
         try:
             async with httpx.AsyncClient() as client:
-                params = {}
+                params = {"page": page, "size": size}
                 if status:
                     params["status"] = status
+                if booked_date:
+                    params["booked_date"] = booked_date
+                if departure_date:
+                    params["departure_date"] = departure_date
                     
                 response = await client.get(
                     f"{self.api_base_url}/bookings/user",
@@ -262,12 +334,29 @@ class GetUserBookingsTool(BaseTool):
                 )
                 
                 if response.status_code == 200:
-                    bookings = response.json()
-                    if not bookings:
-                        status_text = f" with status '{status}'" if status else ""
-                        return f"You have no bookings{status_text}."
+                    data = response.json()
+                    bookings = data.get("items", [])
+                    total = data.get("total", 0)
+                    pages = data.get("pages", 1)
+                    current_page = data.get("page", page)
+                    page_size = data.get("size", size)
                     
-                    result = f"Your bookings{' (' + status + ')' if status else ''} ({len(bookings)} total):\n\n"
+                    # Build filter description
+                    filter_parts = []
+                    if status:
+                        filter_parts.append(f"status: {status}")
+                    if booked_date:
+                        filter_parts.append(f"booked on: {booked_date}")
+                    if departure_date:
+                        filter_parts.append(f"departing on: {departure_date}")
+                    
+                    filter_desc = f" ({', '.join(filter_parts)})" if filter_parts else ""
+                    
+                    if not bookings:
+                        return f"You have no bookings{filter_desc}."
+                    
+                    result = f"Your bookings{filter_desc} (showing {len(bookings)} of {total} total, page {current_page} of {pages}):\n\n"
+                    
                     for booking in bookings:
                         flight_info = booking['flight']
                         departure_time = datetime.fromisoformat(flight_info['departure_time'].replace('Z', '+00:00'))
@@ -289,9 +378,14 @@ class GetUserBookingsTool(BaseTool):
                         
                         result += "\n"
                     
+                    # Add pagination info if there are more pages
+                    if pages > current_page:
+                        result += f"Use page={current_page + 1} to see more bookings."
+                    
                     return result
                 else:
-                    return f"Error retrieving bookings: {response.text}"
+                    error_detail = response.json().get('detail', 'Unknown error') if response.headers.get('content-type', '').startswith('application/json') else response.text
+                    return f"Error retrieving bookings: {error_detail}"
                     
         except Exception as e:
             return f"Error occurred while retrieving bookings: {str(e)}"
@@ -299,6 +393,10 @@ class GetUserBookingsTool(BaseTool):
     def _run(
         self,
         status: Optional[str] = None,
+        booked_date: Optional[str] = None,
+        departure_date: Optional[str] = None,
+        page: int = 1,
+        size: int = 10,
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
     ) -> str:
         """Not implemented for sync execution."""
@@ -394,7 +492,9 @@ def create_faqs_retriever_tool():
         "Can I book a flight through the chatbot? Yes, you can book flights by providing the flight ID and confirming your booking.",
         "How do I cancel a booking using the chatbot? You can cancel a booking by providing the booking ID and confirming the cancellation.",
         "Can the chatbot help me find flights? Yes, you can search for flights by providing the origin, destination, and departure date.",
-        "How do I check my bookings with the chatbot? You can retrieve your bookings by asking for your flight reservations, optionally filtering by status.",
+        "How do I check my bookings with the chatbot? You can retrieve your bookings by asking for your flight reservations. You can filter by status (booked, cancelled, completed), booking date, or departure date, and navigate through multiple pages if you have many bookings.",
+        "Can I filter my bookings when checking them? Yes, you can filter your bookings by status (booked, cancelled, completed), by the date you made the booking, or by the flight departure date. You can also specify how many bookings to show per page.",
+        "What booking statuses can I filter by? You can filter by 'booked' (active upcoming bookings), 'cancelled' (bookings you've cancelled), or 'completed' (flights that have already departed).",
         "What information do I need to book a flight? You need the flight ID to book a flight through the chatbot.",
         "Can I change my booking status using the chatbot? Yes, you can update your booking status to cancelled or other statuses as needed.",
     ]

@@ -79,7 +79,8 @@ class ChatManager:
             self.initialize()
         
         try:
-            api_base_port = os.getenv("PORT", "8000")
+            from constants import ApplicationConstants, EnvironmentKeys, get_env_int
+            api_base_port = get_env_int(EnvironmentKeys.PORT, ApplicationConstants.DEFAULT_PORT)
             api_base_url = f"http://localhost:{api_base_port}"
             
             logger.debug(f"Creating chatbot tools for user {user_id}")

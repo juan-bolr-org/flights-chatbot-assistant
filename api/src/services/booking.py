@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict
 from fastapi import Depends
 from repository import User, Booking
-from schemas import BookingCreate, BookingUpdate, BookingResponse, FlightResponse
+from schemas import BookingCreate, BookingUpdate, BookingResponse, FlightResponse, PaginatedResponse
 from repository import BookingRepository, FlightRepository, create_booking_repository, create_flight_repository
 from resources.logging import get_logger
 from exceptions import (
@@ -37,8 +37,15 @@ class BookingService(ABC):
         pass
     
     @abstractmethod
-    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[BookingResponse]:
-        """Get all bookings for a user with optional status filter."""
+    def get_user_bookings(self, user: User, status: Optional[str] = None, 
+                         booked_date: Optional[str] = None, departure_date: Optional[str] = None, 
+                         page: int = 1, size: int = 10) -> PaginatedResponse[BookingResponse]:
+        """Get all bookings for a user with optional filters and pagination."""
+        pass
+    
+    @abstractmethod
+    def get_computed_booking_status(self, booking: Booking) -> str:
+        """Get the computed status for a booking (considering flight departure time)."""
         pass
 
 
@@ -63,11 +70,14 @@ class BookingBusinessService(BookingService):
             price=booking.flight.price
         )
         
+        # Determine computed status
+        computed_status = self.get_computed_booking_status(booking)
+        
         # Convert booking to BookingResponse
         return BookingResponse(
             id=booking.id,
             flight_id=booking.flight_id,
-            status=booking.status,
+            status=computed_status,
             booked_at=booking.booked_at,
             cancelled_at=booking.cancelled_at,
             flight=flight_response
@@ -169,18 +179,46 @@ class BookingBusinessService(BookingService):
         logger.info(f"User {user.email} successfully deleted/cancelled booking {booking_id} for flight {flight.origin} to {flight.destination}")
         return {"message": "Booking cancelled successfully"}
     
-    def get_user_bookings(self, user: User, status: Optional[str] = None) -> List[BookingResponse]:
-        """Get all bookings for a user with optional status filter."""
-        logger.debug(f"Retrieving bookings for user {user.id} with status filter: {status}")
+    def get_computed_booking_status(self, booking: Booking) -> str:
+        """Get the computed status for a booking (considering flight departure time)."""
+        # If already cancelled, return cancelled
+        if booking.status == "cancelled":
+            return "cancelled"
         
-        bookings = self.booking_repo.find_by_user_id(user.id, status)
+        # Check if flight has departed
+        departure_time_utc = booking.flight.departure_time.replace(tzinfo=datetime.timezone.utc) if booking.flight.departure_time.tzinfo is None else booking.flight.departure_time
+        if departure_time_utc <= datetime.datetime.now(datetime.timezone.utc):
+            return "completed"
         
-        logger.info(f"Successfully retrieved {len(bookings)} bookings for user {user.email} with status filter: {status}")
+        # Otherwise, it's booked (upcoming)
+        return "booked"
+    
+    def get_user_bookings(self, user: User, status: Optional[str] = None, 
+                         booked_date: Optional[str] = None, departure_date: Optional[str] = None, 
+                         page: int = 1, size: int = 10) -> PaginatedResponse[BookingResponse]:
+        """Get all bookings for a user with optional filters and pagination."""
+        logger.debug(f"Retrieving bookings for user {user.id} with status filter: {status}, booked_date: {booked_date}, departure_date: {departure_date}, page: {page}, size: {size}")
+        
+        bookings, total = self.booking_repo.find_by_user_id_paginated(
+            user.id, status, booked_date, departure_date, page, size
+        )
+        
+        logger.info(f"Successfully retrieved {len(bookings)} bookings for user {user.email} (total: {total})")
         logger.debug(f"Retrieved booking IDs: {[booking.id for booking in bookings]}")
         
         # Convert Booking models to BookingResponse schemas
         booking_responses = [self._convert_booking_to_response(booking) for booking in bookings]
-        return booking_responses
+        
+        # Calculate total pages
+        pages = (total + size - 1) // size
+        
+        return PaginatedResponse(
+            items=booking_responses,
+            total=total,
+            page=page,
+            size=size,
+            pages=pages
+        )
 
 
 def create_booking_service(

@@ -60,4 +60,10 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     import os
-    uvicorn.run(app, host="0.0.0.0", port=os.getenv("PORT", 8000), log_level="info")
+    from constants import ApplicationConstants, EnvironmentKeys, get_env_int
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=get_env_int(EnvironmentKeys.PORT, ApplicationConstants.DEFAULT_PORT), 
+        log_level="info"
+    )

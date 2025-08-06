@@ -22,13 +22,14 @@ class FlightRepository(ABC):
         pass
     
     @abstractmethod
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[Flight]:
-        """Search for flights by origin, destination, and departure date."""
+    def search_flights(self, origin: Optional[str] = None, destination: Optional[str] = None, 
+                      departure_date: Optional[str] = None, page: int = 1, size: int = 10) -> tuple[List[Flight], int]:
+        """Search for flights by origin, destination, and departure date with pagination."""
         pass
     
     @abstractmethod
-    def list_all(self) -> List[Flight]:
-        """Get all flights."""
+    def list_all(self, page: int = 1, size: int = 10) -> tuple[List[Flight], int]:
+        """Get all flights with pagination."""
         pass
     
     @abstractmethod
@@ -64,24 +65,49 @@ class FlightSqliteRepository(FlightRepository):
         """Find a flight by ID."""
         return self.db.query(Flight).filter(Flight.id == flight_id).first()
     
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[Flight]:
-        """Search for flights by origin, destination, and departure date."""
-        try:
-            date_obj = datetime.strptime(departure_date, "%Y-%m-%d").date()
-        except ValueError:
-            raise ValueError("Invalid date format. Use YYYY-MM-DD")
+    def search_flights(self, origin: Optional[str] = None, destination: Optional[str] = None, 
+                      departure_date: Optional[str] = None, page: int = 1, size: int = 10) -> tuple[List[Flight], int]:
+        """Search for flights by origin, destination, and departure date with pagination."""
+        query = self.db.query(Flight).filter(Flight.status == "scheduled")
         
-        return self.db.query(Flight).filter(
-            Flight.origin.ilike(f"%{origin}%"),
-            Flight.destination.ilike(f"%{destination}%"),
-            Flight.departure_time >= date_obj,
-            Flight.departure_time < date_obj + timedelta(days=1),
-            Flight.status == "scheduled"
-        ).all()
+        # Apply filters only if parameters are provided
+        if origin:
+            query = query.filter(Flight.origin.ilike(f"%{origin}%"))
+        
+        if destination:
+            query = query.filter(Flight.destination.ilike(f"%{destination}%"))
+        
+        if departure_date:
+            try:
+                date_obj = datetime.strptime(departure_date, "%Y-%m-%d").date()
+                query = query.filter(
+                    Flight.departure_time >= date_obj,
+                    Flight.departure_time < date_obj + timedelta(days=1)
+                )
+            except ValueError:
+                raise ValueError("Invalid date format. Use YYYY-MM-DD")
+        
+        # Get total count before applying pagination
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * size
+        flights = query.offset(offset).limit(size).all()
+        
+        return flights, total
     
-    def list_all(self) -> List[Flight]:
-        """Get all flights."""
-        return self.db.query(Flight).all()
+    def list_all(self, page: int = 1, size: int = 10) -> tuple[List[Flight], int]:
+        """Get all flights with pagination."""
+        query = self.db.query(Flight)
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * size
+        flights = query.offset(offset).limit(size).all()
+        
+        return flights, total
     
     def find_available_by_id(self, flight_id: int) -> Optional[Flight]:
         """Find an available (scheduled) flight by ID."""

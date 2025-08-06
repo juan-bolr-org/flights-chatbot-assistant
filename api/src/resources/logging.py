@@ -18,20 +18,30 @@ from pathlib import Path
 import colorlog
 from pydantic import BaseModel, Field
 from opencensus.ext.azure.log_exporter import AzureLogHandler 
+from constants import ApplicationConstants, EnvironmentKeys, get_env_str
 
 
 class LoggingConfig(BaseModel):
     """Configuration for logging system."""
     log_level: str = Field(
-        default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"),
+        default_factory=lambda: get_env_str(
+            EnvironmentKeys.LOG_LEVEL, 
+            ApplicationConstants.DEFAULT_LOG_LEVEL
+        ),
         description="Global log level (env: LOG_LEVEL)"
     )
     log_file: str = Field(
-        default_factory=lambda: os.getenv("LOG_FILE", "logs/flights-chatbot.log"),
+        default_factory=lambda: get_env_str(
+            EnvironmentKeys.LOG_FILE, 
+            ApplicationConstants.DEFAULT_LOG_FILE
+        ),
         description="Main log file path (env: LOG_FILE)"
     )
     error_log_file: str = Field(
-        default_factory=lambda: os.getenv("ERROR_LOG_FILE", "logs/flights-chatbot-errors.log"),
+        default_factory=lambda: get_env_str(
+            EnvironmentKeys.ERROR_LOG_FILE, 
+            "logs/flights-chatbot-errors.log"
+        ),
         description="Error log file path (env: ERROR_LOG_FILE)"
     )
     max_file_size: int = Field(

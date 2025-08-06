@@ -8,3 +8,11 @@ export interface Booking {
     cancelled_at?: string | null;
     flight: Flight;
 }
+
+export interface PaginatedBookingsResponse {
+    items: Booking[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+}

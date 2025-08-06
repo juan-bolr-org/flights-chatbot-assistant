@@ -7,6 +7,7 @@ from repository import UserRepository, create_user_repository
 from repository.user import User
 from resources.logging import get_logger
 from exceptions import EmailAlreadyExistsError, InvalidCredentialsError
+from constants import SecurityConstants
 import datetime
 
 logger = get_logger("user_service")
@@ -53,8 +54,15 @@ class UserBusinessService(UserService):
             password_hash=hashed_password,
             phone=user.phone
         )
+
+        expires_delta = datetime.timedelta(minutes=self.crypto.config.access_token_expire_minutes)
+        expiration = datetime.datetime.now(datetime.timezone.utc) + expires_delta
+        self.user_repo.update_token_expiration(new_user.id, expiration)
         
-        access_token = self.crypto.create_access_token(data={"sub": new_user.email})
+        access_token = self.crypto.create_access_token(
+            data={"sub": new_user.email}, 
+            expires_delta=expires_delta
+        )
         
         logger.info(f"Successfully registered new user: {user.email} with ID: {new_user.id}")
         return Token(access_token=access_token, token_type="bearer")
@@ -63,7 +71,7 @@ class UserBusinessService(UserService):
         """Login a user."""
         logger.debug(f"Login attempt for email: {user.email}")
 
-        if len(user.password) < 8:
+        if len(user.password) < SecurityConstants.MIN_PASSWORD_LENGTH:
             logger.warning(f"Login failed: Password too short for email {user.email}")
             raise InvalidCredentialsError()
         
@@ -72,10 +80,13 @@ class UserBusinessService(UserService):
             logger.warning(f"Failed login attempt for email: {user.email}")
             raise InvalidCredentialsError()
         
-        expires_delta=datetime.timedelta(minutes=30)
+        expires_delta = datetime.timedelta(minutes=self.crypto.config.access_token_expire_minutes)
         expiration = datetime.datetime.now(datetime.timezone.utc) + expires_delta
         updated_user = self.user_repo.update_token_expiration(db_user.id, expiration)
-        access_token = self.crypto.create_access_token(data={"sub": updated_user.email}, expires_delta=expires_delta)
+        access_token = self.crypto.create_access_token(
+            data={"sub": updated_user.email}, 
+            expires_delta=expires_delta
+        )
         
         logger.info(f"Successful login for user: {user.email} (ID: {updated_user.id})")
         return UserResponse(

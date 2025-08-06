@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from fastapi import Depends
 from repository import User, Flight
-from schemas import FlightCreate, FlightResponse
+from schemas import FlightCreate, FlightResponse, PaginatedResponse
 from repository import FlightRepository, create_flight_repository
 from resources.logging import get_logger
 from exceptions import InvalidDateFormatError, InvalidFlightTimesError, InvalidFlightPriceError
+import math
 
 logger = get_logger("flight_service")
 
@@ -14,8 +15,9 @@ class FlightService(ABC):
     """Abstract base class for Flight service operations."""
     
     @abstractmethod
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[FlightResponse]:
-        """Search for flights by origin, destination, and departure date."""
+    def search_flights(self, origin: Optional[str] = None, destination: Optional[str] = None, 
+                      departure_date: Optional[str] = None, page: int = 1, size: int = 10) -> PaginatedResponse[FlightResponse]:
+        """Search for flights by origin, destination, and departure date with pagination."""
         pass
     
     @abstractmethod
@@ -24,8 +26,8 @@ class FlightService(ABC):
         pass
     
     @abstractmethod
-    def list_flights(self) -> List[FlightResponse]:
-        """Get all flights."""
+    def list_flights(self, page: int = 1, size: int = 10) -> PaginatedResponse[FlightResponse]:
+        """Get all flights with pagination."""
         pass
 
 
@@ -35,14 +37,24 @@ class FlightBusinessService(FlightService):
     def __init__(self, flight_repo: FlightRepository):
         self.flight_repo = flight_repo
     
-    def search_flights(self, origin: str, destination: str, departure_date: str) -> List[FlightResponse]:
-        """Search for flights by origin, destination, and departure date."""
-        logger.debug(f"Searching flights from {origin} to {destination} on {departure_date}")
+    def search_flights(self, origin: Optional[str] = None, destination: Optional[str] = None, 
+                      departure_date: Optional[str] = None, page: int = 1, size: int = 10) -> PaginatedResponse[FlightResponse]:
+        """Search for flights by origin, destination, and departure date with pagination."""
+        # Log the search parameters
+        search_params = []
+        if origin:
+            search_params.append(f"origin: {origin}")
+        if destination:
+            search_params.append(f"destination: {destination}")
+        if departure_date:
+            search_params.append(f"departure_date: {departure_date}")
+        
+        logger.debug(f"Searching flights with filters: {', '.join(search_params) or 'no filters'}, page: {page}, size: {size}")
         
         try:
-            flights = self.flight_repo.search_flights(origin, destination, departure_date)
+            flights, total = self.flight_repo.search_flights(origin, destination, departure_date, page, size)
             
-            logger.info(f"Found {len(flights)} flights from {origin} to {destination} on {departure_date}")
+            logger.info(f"Found {len(flights)} flights (total: {total}) with filters: {', '.join(search_params) or 'no filters'}")
             logger.debug(f"Flight IDs found: {[flight.id for flight in flights]}")
             
             # Convert Flight models to FlightResponse schemas
@@ -58,7 +70,17 @@ class FlightBusinessService(FlightService):
                     price=flight.price
                 ) for flight in flights
             ]
-            return flight_responses
+            
+            # Calculate total pages
+            pages = math.ceil(total / size) if total > 0 else 1
+            
+            return PaginatedResponse(
+                items=flight_responses,
+                total=total,
+                page=page,
+                size=size,
+                pages=pages
+            )
         except ValueError as e:
             logger.warning(f"Invalid date format provided: {departure_date}")
             raise InvalidDateFormatError(departure_date)
@@ -100,13 +122,13 @@ class FlightBusinessService(FlightService):
             price=new_flight.price
         )
     
-    def list_flights(self) -> List[FlightResponse]:
-        """Get all flights."""
-        logger.debug("Retrieving all flights")
+    def list_flights(self, page: int = 1, size: int = 10) -> PaginatedResponse[FlightResponse]:
+        """Get all flights with pagination."""
+        logger.debug(f"Retrieving all flights, page: {page}, size: {size}")
         
-        flights = self.flight_repo.list_all()
+        flights, total = self.flight_repo.list_all(page, size)
         
-        logger.info(f"Successfully retrieved {len(flights)} flights")
+        logger.info(f"Successfully retrieved {len(flights)} flights (total: {total})")
         logger.debug(f"Flight IDs retrieved: {[flight.id for flight in flights]}")
         
         # Convert Flight models to FlightResponse schemas
@@ -122,7 +144,17 @@ class FlightBusinessService(FlightService):
                 price=int(flight.price)
             ) for flight in flights
         ]
-        return flight_responses
+        
+        # Calculate total pages
+        pages = math.ceil(total / size) if total > 0 else 1
+        
+        return PaginatedResponse(
+            items=flight_responses,
+            total=total,
+            page=page,
+            size=size,
+            pages=pages
+        )
 
 
 def create_flight_service(

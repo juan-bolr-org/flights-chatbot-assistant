@@ -1,4 +1,4 @@
-import { Flight, FlightsResponse } from '../types/flight';
+import { Flight, FlightsResponse, PaginatedFlightsResponse } from '../types/flight';
 
 const API_URL = '/api';
 
@@ -7,8 +7,8 @@ function sanitizeId(id: string | number): string {
     return encodeURIComponent(String(id));
 }
 
-export async function getFlights(): Promise<FlightsResponse> {
-    const response = await fetch(`${API_URL}/flights/list`, {
+export async function getFlights(page: number = 1, size: number = 10): Promise<PaginatedFlightsResponse> {
+    const response = await fetch(`${API_URL}/flights/list?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -18,6 +18,37 @@ export async function getFlights(): Promise<FlightsResponse> {
 
     if (!response.ok) {
         throw new Error('Failed to load flights.');
+    }
+
+    return response.json();
+}
+
+export async function searchFlights(
+    origin?: string,
+    destination?: string,
+    departureDate?: string,
+    page: number = 1,
+    size: number = 10
+): Promise<PaginatedFlightsResponse> {
+    const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString(),
+    });
+
+    if (origin) params.append('origin', origin);
+    if (destination) params.append('destination', destination);
+    if (departureDate) params.append('departure_date', departureDate);
+
+    const response = await fetch(`${API_URL}/flights/search?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to search flights.');
     }
 
     return response.json();
