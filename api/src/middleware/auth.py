@@ -47,8 +47,9 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         # Escape all regex special characters except for '*'
         escaped = re.escape(pattern)
         # Replace escaped '*' (which is '\*') with '.*' to match any characters
-        regex_pattern = f"^{escaped.replace(r'\\*', '.*')}$"
+        regex_pattern = f"^{escaped.replace(r'\*', '.*')}$"
         return re.compile(regex_pattern)
+    
     async def dispatch(self, request: Request, call_next):
         """
         Main middleware dispatch method.

@@ -4,7 +4,6 @@ Tests the middleware validation logic and integration.
 """
 
 import pytest
-import asyncio
 import sys
 import os
 from unittest.mock import Mock, patch, AsyncMock
