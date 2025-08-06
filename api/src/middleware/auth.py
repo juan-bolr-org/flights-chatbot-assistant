@@ -36,9 +36,19 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             "/flights/search",  # Public flight search
             "/flights/list"     # Public flight listing
         ]
-        # Compile regex patterns for excluded paths - escape special characters and anchor to full path
-        self.excluded_patterns = [re.compile(f"^{re.escape(pattern).replace(r'\*', '.*')}$") for pattern in self.excluded_paths]
+        # Compile regex patterns for excluded paths using a helper method
+        self.excluded_patterns = [self._compile_path_pattern(pattern) for pattern in self.excluded_paths]
     
+    def _compile_path_pattern(self, pattern: str) -> re.Pattern:
+        """
+        Compiles a path pattern (with optional wildcards) into a regex pattern.
+        Wildcards (*) are converted to match any character sequence.
+        """
+        # Escape all regex special characters except for '*'
+        escaped = re.escape(pattern)
+        # Replace escaped '*' (which is '\*') with '.*' to match any characters
+        regex_pattern = f"^{escaped.replace(r'\\*', '.*')}$"
+        return re.compile(regex_pattern)
     async def dispatch(self, request: Request, call_next):
         """
         Main middleware dispatch method.
