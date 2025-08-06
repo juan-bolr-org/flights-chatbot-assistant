@@ -44,7 +44,7 @@ export function FlightCard({ flight }: FlightCardProps) {
         '/images/2.png',
         '/images/3.png',
     ];
-    const imageIndex = (flight.id % 3)+1;
+    const imageIndex = (flight.id % 3);
     const imageSrc = imageNames[imageIndex];
 
     return (
