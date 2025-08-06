@@ -6,6 +6,12 @@ from typing import Dict, Optional
 from pydantic import BaseModel, Field
 import os
 from .logging import get_logger
+from constants import (
+    SecurityConstants, 
+    EnvironmentKeys, 
+    get_access_token_expire_minutes,
+    get_env_str
+)
 
 logger = get_logger("crypto")
 
@@ -13,12 +19,18 @@ logger = get_logger("crypto")
 class CryptoConfig(BaseModel):
     """Cryptography configuration with Pydantic validation."""
     secret_key: str = Field(
-        default_factory=lambda: os.getenv("SECRET_KEY", "please_guys_do_not_forget_to_set_a_secret_key"),
+        default_factory=lambda: get_env_str(
+            EnvironmentKeys.SECRET_KEY, 
+            SecurityConstants.DEFAULT_SECRET_KEY_WARNING
+        ),
         description="Secret key for JWT encoding"
     )
-    algorithm: str = Field(default="HS256", description="JWT algorithm")
+    algorithm: str = Field(
+        default=SecurityConstants.JWT_ALGORITHM, 
+        description="JWT algorithm"
+    )
     access_token_expire_minutes: int = Field(
-        default=60, 
+        default_factory=get_access_token_expire_minutes,
         ge=1, 
         le=10080,  # Max 7 days
         description="Access token expiration time in minutes"
@@ -44,7 +56,7 @@ class CryptoManager:
         
         # This validation is now handled in the main startup check
         # But we'll keep a debug log here
-        if not self.config.secret_key or self.config.secret_key == "please_guys_do_not_forget_to_set_a_secret_key":
+        if not self.config.secret_key or self.config.secret_key == SecurityConstants.DEFAULT_SECRET_KEY_WARNING:
             logger.debug("Using default secret key (already warned during startup)")
         
         self._is_initialized = True

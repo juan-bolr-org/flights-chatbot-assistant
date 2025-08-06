@@ -9,12 +9,21 @@ This tool helps manage the development environment, run tasks, and configure set
 Usage:
     ./helper                    - Interactive mode
     ./helper run               - Run the API server
-    ./helper test              - Run tests
+    ./helper test              - Run tests (default: tests/ -v)
+    ./helper tests             - Run tests (alias for test)
+    ./helper test [args...]    - Run tests with custom pytest arguments
     ./helper install           - Install/check dependencies
     ./helper deps              - Install/check dependencies
     ./helper env               - Configure environment variables
     ./helper shell             - Open shell in virtual environment
     ./helper --help            - Show this help
+
+Examples:
+    ./helper test                           - Run all tests with verbose output
+    ./helper test tests/test_user_service.py - Run specific test file
+    ./helper test -k "test_login"           - Run tests matching pattern
+    ./helper test --cov=src --cov-report=html - Run with coverage
+    ./helper test -x --pdb                 - Stop on first failure and debug
 
 Features:
 - Auto-detects and activates virtual environment
@@ -403,14 +412,24 @@ class FlightsAPIHelper:
         except KeyboardInterrupt:
             print("\n🛑 Server stopped by user")
     
-    def run_tests(self):
-        """Run the test suite."""
+    def run_tests(self, pytest_args: List[str] = None):
+        """Run the test suite with optional pytest arguments."""
         print("🧪 Running test suite...")
         
+        # Build pytest command
+        cmd = [self.python_exe, "-m", "pytest"]
+        
+        # Add default arguments if no custom args provided
+        if not pytest_args:
+            cmd.extend(["tests", "-v"])
+        else:
+            # Use provided arguments
+            cmd.extend(pytest_args)
+        
+        print(f"Command: {' '.join(cmd)}")
+        
         try:
-            result = subprocess.run([
-                self.python_exe, "-m", "pytest", "tests", "-v"
-            ], cwd=self.project_root)
+            result = subprocess.run(cmd, cwd=self.project_root)
             
             if result.returncode == 0:
                 print("✅ All tests passed!")
@@ -653,17 +672,20 @@ def main():
     )
     
     parser.add_argument('command', nargs='?', choices=[
-        'run', 'test', 'install', 'env', 'shell', 'deps'
+        'run', 'test', 'tests', 'install', 'env', 'shell', 'deps'
     ], help='Command to execute')
     
-    args = parser.parse_args()
+    # Parse known args to allow passing unknown args to pytest
+    args, unknown_args = parser.parse_known_args()
     
     if not args.command:
         helper.interactive_mode()
     elif args.command == 'run':
         helper.run_server()
-    elif args.command == 'test':
-        helper.run_tests()
+    elif args.command in ['test', 'tests']:
+        # For test commands, pass any unknown arguments as pytest args
+        pytest_args = unknown_args if unknown_args else None
+        helper.run_tests(pytest_args)
     elif args.command in ['install', 'deps']:
         helper.install_dependencies()
     elif args.command == 'env':

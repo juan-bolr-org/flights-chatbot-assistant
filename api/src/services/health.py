@@ -217,10 +217,12 @@ class SystemHealthService(HealthService):
     def _check_speech_health(self, health_status: Dict[str, Any]) -> None:
         """Check speech service health including environment variables and ffmpeg dependency."""
         try:
+            from constants import EnvironmentKeys, get_env_str
+            
             # Check environment variables
-            azure_speech_key = os.getenv("AZURE_SPEECH_KEY")
-            azure_speech_region = os.getenv("AZURE_SPEECH_REGION")
-            azure_speech_endpoint = os.getenv("AZURE_SPEECH_ENDPOINT")
+            azure_speech_key = get_env_str(EnvironmentKeys.AZURE_SPEECH_KEY, "")
+            azure_speech_region = get_env_str(EnvironmentKeys.AZURE_SPEECH_REGION, "")
+            azure_speech_endpoint = get_env_str(EnvironmentKeys.AZURE_SPEECH_ENDPOINT, "")
             
             env_vars_status = {
                 "AZURE_SPEECH_KEY": "set" if azure_speech_key else "not_set",
@@ -269,7 +271,8 @@ class SystemHealthService(HealthService):
                 "error": str(e)
             }
             # Only mark as degraded if speech was expected to be configured
-            if os.getenv("AZURE_SPEECH_KEY"):
+            from constants import EnvironmentKeys, get_env_str
+            if get_env_str(EnvironmentKeys.AZURE_SPEECH_KEY, ""):
                 health_status["status"] = "degraded"
 
     def _check_ffmpeg_availability(self) -> Dict[str, Any]:

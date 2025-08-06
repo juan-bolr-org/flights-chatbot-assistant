@@ -35,6 +35,12 @@ class TestUserService:
         mock.get_password_hash.return_value = "hashed_password_123"
         mock.verify_password.return_value = True
         mock.create_access_token.return_value = "test_access_token_123"
+        
+        # Mock the config object with access_token_expire_minutes
+        mock_config = Mock()
+        mock_config.access_token_expire_minutes = 30
+        mock.config = mock_config
+        
         return mock
     
     @pytest.fixture
@@ -100,7 +106,11 @@ class TestUserService:
         
         # Verify crypto calls
         mock_crypto.get_password_hash.assert_called_once_with("secure_password123")
-        mock_crypto.create_access_token.assert_called_once_with(data={"sub": "john.doe@example.com"})
+        # Check that create_access_token was called with both data and expires_delta
+        mock_crypto.create_access_token.assert_called_once()
+        call_args = mock_crypto.create_access_token.call_args
+        assert call_args.kwargs['data'] == {"sub": "john.doe@example.com"}
+        assert call_args.kwargs['expires_delta'] == timedelta(minutes=30)
     
     def test_register_email_already_exists(self, user_service, mock_user_repo, sample_user_create):
         """Test registration failure when email already exists."""
@@ -169,7 +179,11 @@ class TestUserService:
         
         # Verify crypto calls
         mock_crypto.verify_password.assert_called_once_with("secure_password123", "hashed_password_123")
+        # Check that create_access_token was called with both data and expires_delta
         mock_crypto.create_access_token.assert_called_once()
+        call_args = mock_crypto.create_access_token.call_args
+        assert call_args.kwargs['data'] == {"sub": "john.doe@example.com"}
+        assert call_args.kwargs['expires_delta'] == timedelta(minutes=30)
     
     def test_login_user_not_found(self, user_service, mock_user_repo, sample_user_login):
         """Test login failure when user doesn't exist."""
