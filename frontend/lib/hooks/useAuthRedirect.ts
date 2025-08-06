@@ -2,11 +2,29 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+function useSearchParamsSafe() {
+  const [params, setParams] = useState<URLSearchParams | null>(null);
+  
+  useEffect(() => {
+    // Only access searchParams on the client side after hydration
+    if (typeof window !== 'undefined') {
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        setParams(searchParams);
+      } catch {
+        setParams(new URLSearchParams());
+      }
+    }
+  }, []);
+
+  return params || new URLSearchParams();
+}
 
 export function useAuthRedirect() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParamsSafe();
 
   const redirectAfterLogin = () => {
     const redirectPath = searchParams.get('redirect');
@@ -26,7 +44,7 @@ export function useAuthRedirect() {
 // Hook to automatically redirect authenticated users away from auth pages
 export function useRedirectIfAuthenticated(user: any, loading: boolean) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParamsSafe();
 
   useEffect(() => {
     if (!loading && user) {

@@ -18,6 +18,7 @@ import {
 import { EnvelopeClosedIcon, LockClosedIcon } from '@radix-ui/react-icons';
 import { useUser } from '@/context/UserContext';
 import { useAuthRedirect, useRedirectIfAuthenticated } from '@/lib/hooks/useAuthRedirect';
+import { AuthPageWrapper } from '@/components/auth/AuthSuspenseWrapper';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email' }),
@@ -26,7 +27,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const { user, setUser, loading } = useUser();
   const { redirectAfterLogin } = useAuthRedirect();
@@ -153,5 +154,13 @@ export default function LoginPage() {
         </form>
       </Box>
     </Flex>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <AuthPageWrapper>
+      <LoginForm />
+    </AuthPageWrapper>
   );
 }
