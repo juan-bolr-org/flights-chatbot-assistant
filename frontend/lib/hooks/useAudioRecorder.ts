@@ -10,7 +10,7 @@ export interface UseAudioRecorderResult {
   error: string | null;
 }
 
-export function useAudioRecorder(maxDurationMs: number = 60000): UseAudioRecorderResult {
+export function useAudioRecorder(maxDurationMs: number = 30000): UseAudioRecorderResult {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);

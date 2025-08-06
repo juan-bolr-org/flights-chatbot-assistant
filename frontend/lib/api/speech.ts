@@ -20,6 +20,8 @@ export async function speechToText(audioFile: File, token: string): Promise<stri
     
     try {
       const errorData = await response.json();
+
+      console.error('Speech-to-text error response:', JSON.stringify(errorData, null, 2));
       
       // Handle different error response formats
       if (typeof errorData === 'string') {

@@ -148,7 +148,7 @@ class AzureSpeechService(SpeechService):
             )
 
             # Perform recognition
-            result = await speech_recognizer.recognize_once_async()
+            result = speech_recognizer.recognize_once()
             
             if result.reason == speechsdk.ResultReason.RecognizedSpeech:
                 confidence = getattr(result, 'confidence', 1.0)

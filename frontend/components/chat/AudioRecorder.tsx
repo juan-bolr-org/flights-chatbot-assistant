@@ -24,7 +24,7 @@ export function AudioRecorder({ onTextReceived, disabled = false, token }: Audio
     stopRecording,
     resetRecording,
     error: recordingError
-  } = useAudioRecorder(60000); // 1 minute max
+  } = useAudioRecorder(30000); // 30 seconds max
 
   const formatTime = (timeMs: number) => {
     const seconds = Math.floor(timeMs / 1000);
