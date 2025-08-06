@@ -226,7 +226,7 @@ sequenceDiagram
         Frontend->>API: POST /users/login
         API->>Database: Validate credentials
         Database-->>API: User data
-        API-->>Frontend: JWT token (7 days)
+        API-->>Frontend: JWT token (30 min)
         Frontend->>Frontend: Store token in cookie
         Frontend->>User: Redirect to intended page
     else Token exists but expired
