@@ -325,7 +325,7 @@ class TestUserRouter:
     def test_refresh_token_unauthorized(self, client):
         """Test token refresh without authentication."""
         response = client.post("/users/refresh")
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
         
     def test_refresh_token_invalid_token(self, client):
         """Test token refresh with invalid token."""

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
-from fastapi.security import HTTPBearer
 from repository import User
 from schemas import SpeechToTextResponse
 from resources.dependencies import get_current_user
@@ -14,7 +13,6 @@ from exceptions import (
 from utils.error_handlers import api_exception_to_http_exception
 
 router = APIRouter(prefix="/speech", tags=["speech"])
-security = HTTPBearer()
 logger = get_logger("speech_router")
 
 

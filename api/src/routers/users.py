@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import timedelta
 from schemas import UserCreate, UserLogin, Token, UserResponse
@@ -75,15 +75,20 @@ def login(
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(
+    request: Request,
     current_user: User = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
     user_service: UserService = Depends(create_user_service)
 ):
     """
     Get current user information based on JWT token.
     """
     try:
-        user_response = user_service.get_current_user_info(current_user, credentials.credentials)
+        # Get the current token from request state (set by auth middleware)
+        access_token = getattr(request.state, 'jwt_token', None)
+        if not access_token:
+            raise HTTPException(status_code=401, detail="No authentication token available")
+        
+        user_response = user_service.get_current_user_info(current_user, access_token)
         logger.info(f"Retrieved user info for user ID: {current_user.id}")
         return user_response
         

@@ -556,9 +556,8 @@ class TestBookingRouter:
         client = TestClient(app)
         
         response = client.post("/bookings", json={"flight_id": 1})
-        # This would normally return 401 or 403, but since we're not testing the actual auth middleware,
-        # we expect a 403 error due to missing authentication
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # With JWT middleware implementation, missing authentication returns 401 Unauthorized
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_update_booking_without_authentication(self):
         """Test updating booking without authentication."""
@@ -568,9 +567,8 @@ class TestBookingRouter:
         client = TestClient(app)
         
         response = client.patch("/bookings/1", json={"status": "cancelled"})
-        # This would normally return 401 or 403, but since we're not testing the actual auth middleware,
-        # we expect a 403 error due to missing authentication
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # With JWT middleware implementation, missing authentication returns 401 Unauthorized
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_delete_booking_without_authentication(self):
         """Test deleting booking without authentication."""
@@ -580,9 +578,8 @@ class TestBookingRouter:
         client = TestClient(app)
         
         response = client.delete("/bookings/1")
-        # This would normally return 401 or 403, but since we're not testing the actual auth middleware,
-        # we expect a 403 error due to missing authentication
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # With JWT middleware implementation, missing authentication returns 401 Unauthorized
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_get_user_bookings_without_authentication(self):
         """Test getting user bookings without authentication."""
@@ -592,9 +589,8 @@ class TestBookingRouter:
         client = TestClient(app)
         
         response = client.get("/bookings/user")
-        # This would normally return 401 or 403, but since we're not testing the actual auth middleware,
-        # we expect a 403 error due to missing authentication
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # With JWT middleware implementation, missing authentication returns 401 Unauthorized
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_authenticated_user_passed_to_service(self, client, mock_booking_service, sample_booking_create_data, sample_booking_response, mock_current_user):
         """Test that authenticated user is properly passed to service methods."""
