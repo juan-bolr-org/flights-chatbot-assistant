@@ -265,6 +265,7 @@ class FlightsAPIHelper:
             'python-multipart': 'multipart',
             'pydub': 'pydub',
             'audioop-lts; python_version': 'audioop',
+            'langgraph-checkpoint-sqlite': 'langgraph.checkpoint.sqlite',
         }
         
         # Read requirements files

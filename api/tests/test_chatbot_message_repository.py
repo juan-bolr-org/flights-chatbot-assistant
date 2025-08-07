@@ -64,7 +64,7 @@ class TestChatbotMessageRepository:
     
     def test_create_message_success(self, message_repo, sample_user, sample_message_data):
         """Test successful message creation."""
-        message = message_repo.create(
+        message = message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message=sample_message_data["message"],
             response=sample_message_data["response"]
@@ -75,17 +75,17 @@ class TestChatbotMessageRepository:
         assert message.user_message == sample_message_data["message"]
         assert message.bot_response == sample_message_data["response"]
         assert message.created_at is not None
-        assert message.session_id == f"chat_session_{sample_user.id}"
+        assert message.session_id == "test_session"
 
     def test_find_by_user_id_success(self, message_repo, sample_user, sample_message_data):
         """Test finding messages by user ID."""
         # Create multiple messages
-        message1 = message_repo.create(
+        message1 = message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message=sample_message_data["message"],
             response=sample_message_data["response"]
         )
-        message2 = message_repo.create(
+        message2 = message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message="Segunda pregunta",
             response="Segunda respuesta"
@@ -100,12 +100,12 @@ class TestChatbotMessageRepository:
 
     def test_count_by_user_id_success(self, message_repo, sample_user, sample_message_data):
         """Test counting messages for a user."""
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message=sample_message_data["message"],
             response=sample_message_data["response"]
         )
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message="Segunda pregunta",
             response="Segunda respuesta"
@@ -116,12 +116,12 @@ class TestChatbotMessageRepository:
 
     def test_delete_by_user_id_success(self, message_repo, sample_user, sample_message_data):
         """Test deleting all messages for a user."""
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message=sample_message_data["message"],
             response=sample_message_data["response"]
         )
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message="Segunda pregunta",
             response="Segunda respuesta"
@@ -140,7 +140,7 @@ class TestChatbotMessageRepository:
         """Test message pagination."""
         # Create 3 messages
         for i in range(3):
-            message_repo.create(
+            message_repo.create(session_id="test_session", 
                 user_id=sample_user.id,
                 message=f"Message {i}",
                 response=f"Response {i}"
@@ -179,7 +179,7 @@ class TestChatbotMessageRepository:
         long_message = "A" * 1000  # 1000 character message
         long_response = "B" * 1000  # 1000 character response
         
-        message = message_repo.create(
+        message = message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message=long_message,
             response=long_response
@@ -202,14 +202,14 @@ class TestChatbotMessageRepository:
         db_session.refresh(user2)
         
         # Create message for first user
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=sample_user.id,
             message="Mensaje usuario 1",
             response="Respuesta usuario 1"
         )
         
         # Create message for second user
-        message_repo.create(
+        message_repo.create(session_id="test_session", 
             user_id=user2.id,
             message="Mensaje usuario 2",
             response="Respuesta usuario 2"

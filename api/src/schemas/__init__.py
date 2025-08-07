@@ -1,7 +1,7 @@
 from .user import UserCreate, UserLogin, UserResponse, Token
 from .flight import FlightSearch, FlightResponse, FlightCreate, PaginatedResponse
 from .booking import BookingCreate, BookingResponse, BookingUpdate
-from .chat import ChatRequest, ChatResponse, ChatMessageResponse, ChatHistoryResponse
+from .chat import ChatRequest, ChatResponse, ChatMessageResponse, ChatHistoryResponse, ChatSessionsResponse, DeleteSessionResponse
 from .speech import SpeechToTextResponse
 
 __all__ = [
@@ -20,5 +20,7 @@ __all__ = [
     "ChatResponse",
     "ChatMessageResponse",
     "ChatHistoryResponse",
+    "ChatSessionsResponse",
+    "DeleteSessionResponse",
     "SpeechToTextResponse"
 ]
