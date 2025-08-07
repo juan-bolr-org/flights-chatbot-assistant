@@ -84,9 +84,9 @@ class ChatSessionSqliteRepository(ChatSessionRepository):
             ChatSession.id == session_id
         ).first()
     
-    def update_alias(self, session_id: str, alias: str) -> Optional[ChatSession]:
-        """Update session alias."""
-        session = self.find_by_id(session_id)
+    def update_alias(self, user_id: int, session_id: str, alias: str) -> Optional[ChatSession]:
+        """Update session alias for a specific user and session."""
+        session = self.find_by_user_and_session(user_id, session_id)
         if session:
             session.alias = alias
             session.updated_at = datetime.datetime.now(datetime.timezone.utc)
