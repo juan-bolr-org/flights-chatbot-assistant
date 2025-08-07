@@ -208,7 +208,7 @@ export function useChatInterface({
     sendMessage,
     clearChat,
     loadHistory,
-    canClearChat: Boolean(canClearChat),
+    canClearChat: canClearChat,
     setMessages
   };
 }
