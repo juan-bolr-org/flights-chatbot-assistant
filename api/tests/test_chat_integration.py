@@ -72,12 +72,11 @@ def test_session_id_generation():
     
     # Test with custom session name
     session_id = manager.generate_session_id(123, "test_session")
-    assert session_id == "user_123_session_test_session"
+    assert session_id == "123_test_session"
     
-    # Test with auto-generated session ID
-    session_id = manager.generate_session_id(123)
-    assert session_id.startswith("user_123_session_")
-    assert len(session_id) > len("user_123_session_")
+    # Test with another session name
+    session_id = manager.generate_session_id(123, "another_session")
+    assert session_id == "123_another_session"
 
 def test_schema_validations():
     """Test that our new schemas work correctly."""
@@ -87,12 +86,7 @@ def test_schema_validations():
     request = ChatRequest(content="Hello", session_id="test_session")
     assert request.content == "Hello"
     assert request.session_id == "test_session"
-    
-    # Test ChatRequest without session_id
-    request = ChatRequest(content="Hello")
-    assert request.content == "Hello"
-    assert request.session_id is None
-    
+
     # Test ChatResponse
     response = ChatResponse(response="Hi there", session_id="test_session", session_alias="Test Session")
     assert response.response == "Hi there"

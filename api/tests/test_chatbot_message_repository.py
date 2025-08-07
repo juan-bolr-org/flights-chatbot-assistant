@@ -172,6 +172,122 @@ class TestChatbotMessageRepository:
         deleted_count = message_repo.delete_by_user_id(sample_user.id)
         assert deleted_count == 0
 
+    # ===== SESSION-BASED TESTS =====
+
+    def test_find_by_user_id_and_session_success(self, message_repo, sample_user, sample_message_data):
+        """Test finding messages by user ID and session."""
+        # Create messages in different sessions
+        message1 = message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Message in session 1",
+            response="Response in session 1"
+        )
+        message2 = message_repo.create(session_id="session_2", 
+            user_id=sample_user.id,
+            message="Message in session 2",
+            response="Response in session 2"
+        )
+        message3 = message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Another message in session 1",
+            response="Another response in session 1"
+        )
+        
+        # Find messages for session 1 only
+        messages = message_repo.find_by_user_id_and_session(sample_user.id, "session_1")
+        
+        assert len(messages) == 2
+        assert all(msg.session_id == "session_1" for msg in messages)
+        # Verify that messages are ordered by created_at desc
+        assert messages[0].id == message3.id
+        assert messages[1].id == message1.id
+
+    def test_count_by_user_id_and_session_success(self, message_repo, sample_user):
+        """Test counting messages for a user and session."""
+        # Create messages in different sessions
+        message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Message 1 in session 1",
+            response="Response 1 in session 1"
+        )
+        message_repo.create(session_id="session_2", 
+            user_id=sample_user.id,
+            message="Message in session 2",
+            response="Response in session 2"
+        )
+        message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Message 2 in session 1",
+            response="Response 2 in session 1"
+        )
+        
+        count_session_1 = message_repo.count_by_user_id_and_session(sample_user.id, "session_1")
+        count_session_2 = message_repo.count_by_user_id_and_session(sample_user.id, "session_2")
+        
+        assert count_session_1 == 2
+        assert count_session_2 == 1
+
+    def test_delete_by_user_id_and_session_success(self, message_repo, sample_user):
+        """Test deleting messages for a user and session."""
+        # Create messages in different sessions
+        message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Message 1 in session 1",
+            response="Response 1 in session 1"
+        )
+        message_repo.create(session_id="session_2", 
+            user_id=sample_user.id,
+            message="Message in session 2",
+            response="Response in session 2"
+        )
+        message_repo.create(session_id="session_1", 
+            user_id=sample_user.id,
+            message="Message 2 in session 1",
+            response="Response 2 in session 1"
+        )
+        
+        # Delete only session 1 messages
+        deleted_count = message_repo.delete_by_user_id_and_session(sample_user.id, "session_1")
+        assert deleted_count == 2
+        
+        # Verify session 1 messages were deleted
+        session_1_messages = message_repo.find_by_user_id_and_session(sample_user.id, "session_1")
+        assert len(session_1_messages) == 0
+        
+        # Verify session 2 messages still exist
+        session_2_messages = message_repo.find_by_user_id_and_session(sample_user.id, "session_2")
+        assert len(session_2_messages) == 1
+
+    def test_find_by_user_id_and_session_with_pagination(self, message_repo, sample_user):
+        """Test session-based message pagination."""
+        # Create 3 messages in the same session
+        for i in range(3):
+            message_repo.create(session_id="test_session", 
+                user_id=sample_user.id,
+                message=f"Message {i}",
+                response=f"Response {i}"
+            )
+        
+        # Test limit
+        messages = message_repo.find_by_user_id_and_session(sample_user.id, "test_session", limit=2)
+        assert len(messages) == 2
+        
+        # Test offset
+        messages = message_repo.find_by_user_id_and_session(sample_user.id, "test_session", limit=2, offset=1)
+        assert len(messages) == 2
+        assert messages[0].user_message == 'Message 1'
+
+    def test_session_methods_no_messages(self, message_repo, sample_user):
+        """Test session-based methods when no messages exist."""
+        messages = message_repo.find_by_user_id_and_session(sample_user.id, "nonexistent_session")
+        assert len(messages) == 0
+        
+        count = message_repo.count_by_user_id_and_session(sample_user.id, "nonexistent_session")
+        assert count == 0
+        
+        deleted_count = message_repo.delete_by_user_id_and_session(sample_user.id, "nonexistent_session")
+        assert deleted_count == 0
+
     # ===== EDGE CASES =====
 
     def test_create_message_long_content(self, message_repo, sample_user):

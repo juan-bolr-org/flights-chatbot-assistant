@@ -103,7 +103,7 @@ class TestChatService:
     async def test_process_chat_request_success(self, chat_service, sample_user):
         """Test successful chat request processing."""
         # Setup
-        request = ChatRequest(content="Hello bot")
+        request = ChatRequest(content="Hello bot", session_id="test_session_123")
         jwt_token = "test_jwt_token"
         
         # Execute
@@ -184,13 +184,13 @@ class TestChatService:
 
     def test_clear_chat_history_success(self, chat_service, mock_chat_repo):
         """Test successful chat history clearing."""
-        mock_chat_repo.delete_by_user_id.return_value = 5
+        mock_chat_repo.delete_by_user_id_and_session.return_value = 5
 
-        result = chat_service.clear_chat_history(user_id=1, session_id=None)
+        result = chat_service.clear_chat_history(user_id=1, session_id="test_session_123")
 
         assert result["deleted_count"] == 5
         assert "Successfully cleared 5 chat messages" in result["message"]
-        mock_chat_repo.delete_by_user_id.assert_called_once_with(1)
+        mock_chat_repo.delete_by_user_id_and_session.assert_called_once_with(1, "test_session_123")
 
     # ===== NEGATIVE TESTS =====
 
@@ -198,7 +198,7 @@ class TestChatService:
     async def test_process_chat_request_agent_error(self, chat_service, sample_user):
         """Test chat request processing when agent fails."""
         # Setup
-        request = ChatRequest(content="Hello bot")
+        request = ChatRequest(content="Hello bot", session_id="test_session_123")
         jwt_token = "test_jwt_token"
         # Make the create_agent method raise an exception
         chat_service._mock_chat_manager.create_agent.side_effect = Exception("Agent error")
@@ -278,7 +278,7 @@ class TestChatService:
         # Make create_agent return this new mock agent
         chat_service._mock_chat_manager.create_agent.return_value = mock_agent
         
-        request = ChatRequest(content="Hello bot")
+        request = ChatRequest(content="Hello bot", session_id="test_session_123")
         
         # Execute
         response = await chat_service.process_chat_request(sample_user, request, jwt_token)
@@ -291,9 +291,9 @@ class TestChatService:
 
     def test_clear_chat_history_no_messages(self, chat_service, mock_chat_repo):
         """Test clearing chat history when no messages exist."""
-        mock_chat_repo.delete_by_user_id.return_value = 0
+        mock_chat_repo.delete_by_user_id_and_session.return_value = 0
 
-        result = chat_service.clear_chat_history(user_id=1, session_id=None)
+        result = chat_service.clear_chat_history(user_id=1, session_id="test_session_123")
 
         assert result["deleted_count"] == 0
         assert "Successfully cleared 0 chat messages" in result["message"]
