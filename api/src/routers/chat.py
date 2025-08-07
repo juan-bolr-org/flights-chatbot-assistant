@@ -99,7 +99,7 @@ def clear_chat_history(
         )
 
 @router.get("/sessions", response_model=ChatSessionsResponse)
-def get_user_sessions(
+async def get_user_sessions(
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
@@ -107,7 +107,7 @@ def get_user_sessions(
     Get all chat sessions for the current user.
     """
     try:
-        sessions = chat_service.get_user_sessions(user.id)
+        sessions = await chat_service.get_user_sessions(user.id)
         
         logger.info(f"Retrieved {sessions.total_count} sessions for user {user.email}")
         

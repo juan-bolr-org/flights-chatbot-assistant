@@ -208,7 +208,9 @@ class ChatManager:
             
             # Extract the database path from the connection string
             db_path = self.config.checkpoint_db_path
-            if db_path.startswith("sqlite:///"):
+            if db_path.startswith("sqlite+aiosqlite:///"):
+                db_path = db_path.replace("sqlite+aiosqlite:///", "")
+            elif db_path.startswith("sqlite:///"):
                 db_path = db_path.replace("sqlite:///", "")
             
             # Convert relative path to absolute path
