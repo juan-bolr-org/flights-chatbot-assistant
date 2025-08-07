@@ -5,19 +5,31 @@ import {
   DeleteChatHistoryResponse, 
   ChatSessionsResponse, 
   DeleteSessionResponse,
-  ChatResponse 
+  ChatResponse
 } from '../types/chat';
+
+// Import the new types from the shared components
+import { 
+  CreateSessionRequest,
+  CreateSessionResponse,
+  UpdateSessionAliasRequest,
+  UpdateSessionAliasResponse
+} from '../../components/chat/types';
 
 const API_URL = '/api';
 
 export async function sendChatMessage(
   token: string, 
   query: string, 
-  sessionId?: string
+  sessionId: string,  // Now required
+  sessionAlias?: string
 ): Promise<ChatResponse> {
-  const body: any = { content: query };
-  if (sessionId) {
-    body.session_id = sessionId;
+  const body: any = { 
+    content: query,
+    session_id: sessionId
+  };
+  if (sessionAlias) {
+    body.session_alias = sessionAlias;
   }
 
   const res = await fetch(`${API_URL}/chat`, {
@@ -39,18 +51,15 @@ export async function sendChatMessage(
 
 export async function getChatHistory(
   token: string, 
-  sessionId?: string,
+  sessionId: string,  // Now required
   limit: number = 50, 
   offset: number = 0
 ): Promise<ChatHistoryResponse> {
   const params = new URLSearchParams({
+    session_id: sessionId,
     limit: limit.toString(),
     offset: offset.toString(),
   });
-  
-  if (sessionId) {
-    params.append('session_id', sessionId);
-  }
 
   const res = await fetch(`${API_URL}/chat/history?${params}`, {
     method: "GET",
@@ -70,9 +79,9 @@ export async function getChatHistory(
 
 export async function deleteChatHistory(
   token: string, 
-  sessionId?: string
+  sessionId: string  // Now required
 ): Promise<DeleteChatHistoryResponse> {
-  const params = sessionId ? `?session_id=${sessionId}` : '';
+  const params = `?session_id=${sessionId}`;
   
   const res = await fetch(`${API_URL}/chat/history${params}`, {
     method: "DELETE",
@@ -122,6 +131,49 @@ export async function deleteSession(
 
   if (!res.ok) {
     throw new Error("Error deleting session");
+  }
+
+  return await res.json();
+}
+
+export async function createSession(
+  token: string,
+  request: CreateSessionRequest
+): Promise<CreateSessionResponse> {
+  const res = await fetch(`${API_URL}/chat/sessions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: 'include',
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    throw new Error("Error creating session");
+  }
+
+  return await res.json();
+}
+
+export async function updateSessionAlias(
+  token: string,
+  sessionId: string,
+  request: UpdateSessionAliasRequest
+): Promise<UpdateSessionAliasResponse> {
+  const res = await fetch(`${API_URL}/chat/sessions/${sessionId}/alias`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: 'include',
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    throw new Error("Error updating session alias");
   }
 
   return await res.json();

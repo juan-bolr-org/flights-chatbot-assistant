@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from repository import User
-from schemas import ChatRequest, ChatResponse, ChatHistoryResponse, ChatSessionsResponse, DeleteSessionResponse
+from schemas import ChatRequest, ChatResponse, ChatHistoryResponse, ChatSessionsResponse, DeleteSessionResponse, CreateSessionRequest, CreateSessionResponse, UpdateSessionAliasRequest, UpdateSessionAliasResponse
 from resources.dependencies import get_current_user
 from resources.logging import get_logger
 from services import ChatService, create_chat_service
@@ -32,7 +32,7 @@ async def chat_endpoint(
         # Save to database through service
         await chat_service.save_chat_message(user.id, response.session_id, request.content, response.response)
         
-        logger.info(f"Successfully processed chat request for user {user.email}")
+        logger.info(f"Successfully processed chat request for user {user.email} with session {response.session_id}")
         logger.debug(f"Response length: {len(response.response)} characters")
         
         return response
@@ -49,14 +49,14 @@ async def chat_endpoint(
 
 @router.get("/history", response_model=ChatHistoryResponse)
 def get_chat_history(
-    session_id: Optional[str] = Query(None, description="Optional session ID to filter history"),
+    session_id: str = Query(..., description="Session ID to filter history"),
     limit: int = Query(50, ge=1, le=100, description="Number of messages to retrieve"),
     offset: int = Query(0, ge=0, description="Number of messages to skip"),
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
     """
-    Get chat history for the current user with optional session filtering and pagination.
+    Get chat history for the current user for a specific session.
     """
     try:
         history = chat_service.get_chat_history(user.id, session_id=session_id, limit=limit, offset=offset)
@@ -74,20 +74,17 @@ def get_chat_history(
 
 @router.delete("/history")
 def clear_chat_history(
-    session_id: Optional[str] = Query(None, description="Optional session ID to clear specific session"),
+    session_id: str = Query(..., description="Session ID to clear specific session"),
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
     """
-    Clear chat history for the current user, optionally for a specific session.
+    Clear chat history for the current user for a specific session.
     """
     try:
         result = chat_service.clear_chat_history(user.id, session_id=session_id)
         
-        if session_id:
-            logger.info(f"Cleared {result['deleted_count']} chat messages for user {user.email}, session {session_id}")
-        else:
-            logger.info(f"Cleared {result['deleted_count']} chat messages for user {user.email}")
+        logger.info(f"Cleared {result['deleted_count']} chat messages for user {user.email}, session {session_id}")
         
         return result
         
@@ -141,4 +138,51 @@ def delete_session(
         raise HTTPException(
             status_code=500,
             detail=f"Error deleting session: {str(e)}"
+        )
+
+@router.post("/sessions", response_model=CreateSessionResponse)
+async def create_session(
+    request: CreateSessionRequest,
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Create a new chat session for the current user.
+    """
+    try:
+        result = await chat_service.create_session(user.id, request)
+        
+        logger.info(f"Created new session {result.session_id} with alias '{result.alias}' for user {user.email}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error creating session for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating session: {str(e)}"
+        )
+
+@router.put("/sessions/{session_id}/alias", response_model=UpdateSessionAliasResponse)
+def update_session_alias(
+    session_id: str,
+    request: UpdateSessionAliasRequest,
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Update the alias of a specific chat session for the current user.
+    """
+    try:
+        result = chat_service.update_session_alias(user.id, session_id, request)
+        
+        logger.info(f"Updated alias for session {session_id} to '{result.alias}' for user {user.email}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error updating session alias for {session_id} for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating session alias: {str(e)}"
         )

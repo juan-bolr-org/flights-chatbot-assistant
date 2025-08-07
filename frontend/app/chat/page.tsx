@@ -19,6 +19,8 @@ import { useChatInterface } from '@/components/chat/useChatInterface';
 import {
   getChatSessions,
   deleteSession,
+  createSession,
+  updateSessionAlias,
 } from '@/lib/api/chat';
 import { ChatSession } from '@/components/chat/types';
 
@@ -55,24 +57,20 @@ export default function ChatPage() {
     }
   }, [user]);
 
-  const generateSessionId = () => {
-    return Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
-  };
-
   const loadSessions = async () => {
     try {
       if (!user?.token) return;
       
       const response = await getChatSessions(user.token.access_token);
       
-      // Convert API sessions to ChatSession format with names from localStorage
-      const sessionData: ChatSession[] = response.sessions.map(sessionId => {
-        const storedName = localStorage.getItem(`session_name_${sessionId}`);
+      // Convert API sessions to ChatSession format
+      const sessionData: ChatSession[] = response.sessions.map(sessionInfo => {
         return {
-          id: sessionId,
-          name: storedName || `Session ${sessionId.slice(-8)}`,
-          lastActivity: new Date().toISOString(),
-          messageCount: 0,
+          session_id: sessionInfo.session_id,
+          alias: sessionInfo.alias,
+          message_count: sessionInfo.message_count,
+          created_at: sessionInfo.created_at,
+          updated_at: sessionInfo.updated_at,
         };
       });
 
@@ -80,9 +78,9 @@ export default function ChatPage() {
 
       // If no current session and we have sessions, select the first one
       if (!currentSessionId && sessionData.length > 0) {
-        setCurrentSessionId(sessionData[0].id);
-        setCurrentSessionName(sessionData[0].name);
-        await loadHistory(sessionData[0].id);
+        setCurrentSessionId(sessionData[0].session_id);
+        setCurrentSessionName(sessionData[0].alias);
+        await loadHistory(sessionData[0].session_id);
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -90,37 +88,41 @@ export default function ChatPage() {
   };
 
   const createNewSession = async (sessionName: string) => {
-    if (!sessionName.trim() || sessionName.toLowerCase() === 'default') {
-      return;
+    if (!user?.token) return;
+    
+    try {
+      // Call API to create session
+      const response = await createSession(user.token.access_token, {
+        alias: sessionName.trim() || undefined // Let backend generate default if empty
+      });
+
+      const newSession: ChatSession = {
+        session_id: response.session_id,
+        alias: response.alias,
+        message_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      setSessions(prev => [newSession, ...prev]);
+      setCurrentSessionId(response.session_id);
+      setCurrentSessionName(response.alias);
+      setMessages([
+        { 
+          role: 'bot', 
+          content: `Welcome to "${response.alias}"! How can I help you today?`,
+          timestamp: new Date()
+        }
+      ]);
+    } catch (error) {
+      console.error('Error creating session:', error);
     }
-
-    const sessionId = generateSessionId();
-    const newSession: ChatSession = {
-      id: sessionId,
-      name: sessionName.trim(),
-      lastActivity: new Date().toISOString(),
-      messageCount: 0,
-    };
-
-    // Save session name to localStorage
-    localStorage.setItem(`session_name_${sessionId}`, newSession.name);
-
-    setSessions(prev => [newSession, ...prev]);
-    setCurrentSessionId(sessionId);
-    setCurrentSessionName(newSession.name);
-    setMessages([
-      { 
-        role: 'bot', 
-        content: `Welcome to "${newSession.name}"! How can I help you today?`,
-        timestamp: new Date()
-      }
-    ]);
   };
 
   const selectSession = async (session: ChatSession) => {
-    setCurrentSessionId(session.id);
-    setCurrentSessionName(session.name);
-    await loadHistory(session.id);
+    setCurrentSessionId(session.session_id);
+    setCurrentSessionName(session.alias);
+    await loadHistory(session.session_id);
   };
 
   const deleteSessionHandler = async (sessionId: string) => {
@@ -129,13 +131,10 @@ export default function ChatPage() {
 
       await deleteSession(user.token.access_token, sessionId);
       
-      // Remove from localStorage
-      localStorage.removeItem(`session_name_${sessionId}`);
-      
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setSessions(prev => prev.filter(s => s.session_id !== sessionId));
       
       if (currentSessionId === sessionId) {
-        const remainingSessions = sessions.filter(s => s.id !== sessionId);
+        const remainingSessions = sessions.filter(s => s.session_id !== sessionId);
         if (remainingSessions.length > 0) {
           await selectSession(remainingSessions[0]);
         } else {
@@ -149,20 +148,26 @@ export default function ChatPage() {
     }
   };
 
-  const renameSession = (sessionId: string, newName: string) => {
-    if (!newName.trim() || newName.toLowerCase() === 'default') {
+  const renameSession = async (sessionId: string, newName: string) => {
+    if (!newName.trim() || newName.toLowerCase() === 'default' || !user?.token) {
       return;
     }
 
-    // Update localStorage
-    localStorage.setItem(`session_name_${sessionId}`, newName.trim());
-    
-    setSessions(prev => prev.map(s => 
-      s.id === sessionId ? { ...s, name: newName.trim() } : s
-    ));
-    
-    if (currentSessionId === sessionId) {
-      setCurrentSessionName(newName.trim());
+    try {
+      // Call API to update session alias
+      await updateSessionAlias(user.token.access_token, sessionId, {
+        alias: newName.trim()
+      });
+      
+      setSessions(prev => prev.map(s => 
+        s.session_id === sessionId ? { ...s, alias: newName.trim() } : s
+      ));
+      
+      if (currentSessionId === sessionId) {
+        setCurrentSessionName(newName.trim());
+      }
+    } catch (error) {
+      console.error('Error renaming session:', error);
     }
   };
 
@@ -173,8 +178,8 @@ export default function ChatPage() {
     
     // Update session activity
     setSessions(prev => prev.map(s => 
-      s.id === currentSessionId 
-        ? { ...s, lastActivity: new Date().toISOString(), messageCount: s.messageCount + 1 }
+      s.session_id === currentSessionId 
+        ? { ...s, updated_at: new Date().toISOString(), message_count: s.message_count + 1 }
         : s
     ));
   };

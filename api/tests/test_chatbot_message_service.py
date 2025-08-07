@@ -62,9 +62,22 @@ class TestChatService:
         mock_chat_manager.create_agent = AsyncMock(return_value=mock_agent)
         mock_chat_manager.generate_session_id.return_value = "test_session_123"
         
+        # Create mock session repository
+        from repository import ChatSessionRepository
+        mock_session_repo = Mock(spec=ChatSessionRepository)
+        
+        # Mock session responses
+        mock_session = Mock()
+        mock_session.session_id = "test_session_123"
+        mock_session.alias = "Test Session"
+        mock_session.message_count = 0
+        mock_session_repo.find_by_user_and_session.return_value = mock_session
+        mock_session_repo.create.return_value = mock_session
+        
         service = AgentChatService(
             system_context="test context",
-            chat_repo=mock_chat_repo
+            chat_repo=mock_chat_repo,
+            session_repo=mock_session_repo
         )
         # Add the mock agent as an attribute for tests that need to access it
         service._mock_agent = mock_agent
@@ -96,10 +109,11 @@ class TestChatService:
         # Execute
         response = await chat_service.process_chat_request(sample_user, request, jwt_token)
         
-        # Verify response structure - should now return ChatResponse with session_id
+        # Verify response structure - should now return ChatResponse with session_id and alias
         assert isinstance(response, ChatResponse)
         assert response.response == "mock response"
         assert response.session_id == "test_session_123"
+        assert response.session_alias == "Test Session"
         
         # Verify chat manager was called correctly
         chat_service._mock_chat_manager.create_agent.assert_called_once_with(
@@ -209,10 +223,10 @@ class TestChatService:
 
     def test_get_chat_history_empty(self, chat_service, mock_chat_repo):
         """Test chat history retrieval when no messages exist."""
-        mock_chat_repo.find_by_user_id.return_value = []
-        mock_chat_repo.count_by_user_id.return_value = 0
+        mock_chat_repo.find_by_user_id_and_session.return_value = []
+        mock_chat_repo.count_by_user_id_and_session.return_value = 0
 
-        history = chat_service.get_chat_history(user_id=1, session_id=None)
+        history = chat_service.get_chat_history(user_id=1, session_id="test_session_123")
 
         assert len(history.messages) == 0
         assert history.total_count == 0

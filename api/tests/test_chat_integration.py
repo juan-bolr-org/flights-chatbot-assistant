@@ -94,14 +94,27 @@ def test_schema_validations():
     assert request.session_id is None
     
     # Test ChatResponse
-    response = ChatResponse(response="Hi there", session_id="test_session")
+    response = ChatResponse(response="Hi there", session_id="test_session", session_alias="Test Session")
     assert response.response == "Hi there"
     assert response.session_id == "test_session"
+    assert response.session_alias == "Test Session"
     
     # Test ChatSessionsResponse
-    sessions_response = ChatSessionsResponse(sessions=["session1", "session2"], total_count=2)
-    assert len(sessions_response.sessions) == 2
-    assert sessions_response.total_count == 2
+    from schemas.chat import ChatSessionInfo
+    from datetime import datetime
+    
+    session_info = ChatSessionInfo(
+        session_id="session1",
+        alias="Session 1",
+        message_count=5,
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+    sessions_response = ChatSessionsResponse(sessions=[session_info], total_count=1)
+    assert len(sessions_response.sessions) == 1
+    assert sessions_response.total_count == 1
+    assert sessions_response.sessions[0].session_id == "session1"
+    assert sessions_response.sessions[0].alias == "Session 1"
     
     # Test DeleteSessionResponse
     delete_response = DeleteSessionResponse(

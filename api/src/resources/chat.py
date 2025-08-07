@@ -187,12 +187,11 @@ class ChatManager:
         """Get the normalized system context."""
         return re.sub(r"\s+", " ", self.config.system_context).strip()
     
-    def generate_session_id(self, user_id: int, session_name: Optional[str] = None) -> str:
-        """Generate a unique session ID for a user."""
-        if session_name:
-            return f"user_{user_id}_session_{session_name}"
-        else:
-            return f"user_{user_id}_session_default"
+    def generate_session_id(self, user_id: int, session_name: str) -> str:
+        """Generate a deterministic session ID for a user with a session name."""
+        # Clean session name for use in ID
+        clean_name = ''.join(c for c in session_name if c.isalnum() or c in '_-').lower()
+        return f"{user_id}_{clean_name}"
     
     async def get_user_sessions(self, user_id: int) -> List[str]:
         """Get all session IDs for a specific user from the checkpoint database."""
@@ -203,7 +202,7 @@ class ChatManager:
         
         try:
             # Get all sessions from the checkpointer that belong to this user
-            prefix = f"user_{user_id}_session_"
+            prefix = f"{user_id}_"
             sessions = []
             
             # Extract the database path from the connection string

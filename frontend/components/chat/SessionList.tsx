@@ -50,10 +50,7 @@ export function SessionList({
   const [editingSessionName, setEditingSessionName] = useState('');
 
   const handleCreateSession = () => {
-    if (!newSessionName.trim() || newSessionName.toLowerCase() === 'default') {
-      return;
-    }
-    
+    // Allow creating session with empty name (backend will generate default)
     onSessionCreate(newSessionName.trim());
     setNewSessionName('');
     setShowNewSessionDialog(false);
@@ -83,7 +80,7 @@ export function SessionList({
             <Dialog.Content style={{ maxWidth: 450 }}>
               <Dialog.Title>{newSessionTitle}</Dialog.Title>
               <Dialog.Description size="2" mb="4">
-                {newSessionDescription}
+                Enter a name for your new chat session, or leave blank for a default name (Chat #1, Chat #2, etc.).
               </Dialog.Description>
 
               <Flex direction="column" gap="3">
@@ -105,7 +102,7 @@ export function SessionList({
                 </Dialog.Close>
                 <Button 
                   onClick={handleCreateSession}
-                  disabled={!newSessionName.trim() || newSessionName.toLowerCase() === 'default'}
+                  disabled={newSessionName.toLowerCase() === 'default'}
                 >
                   Create Session
                 </Button>
@@ -118,46 +115,46 @@ export function SessionList({
           <Flex direction="column" gap="2">
             {sessions.map((session) => (
               <Card
-                key={session.id}
+                key={session.session_id}
                 style={{
                   cursor: 'pointer',
-                  backgroundColor: currentSessionId === session.id ? 'var(--accent-3)' : undefined,
-                  border: currentSessionId === session.id ? '1px solid var(--accent-7)' : undefined,
+                  backgroundColor: currentSessionId === session.session_id ? 'var(--accent-3)' : undefined,
+                  border: currentSessionId === session.session_id ? '1px solid var(--accent-7)' : undefined,
                 }}
                 onClick={() => onSessionSelect(session)}
               >
                 <Flex justify="between" align="center" p="2">
                   <Flex direction="column" gap="1" style={{ flex: 1 }}>
-                    {editingSessionId === session.id ? (
+                    {editingSessionId === session.session_id ? (
                       <TextField.Root
                         size="1"
                         value={editingSessionName}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingSessionName(e.target.value)}
                         onKeyDown={(e: React.KeyboardEvent) => {
-                          if (e.key === 'Enter') handleRenameSession(session.id, editingSessionName);
+                          if (e.key === 'Enter') handleRenameSession(session.session_id, editingSessionName);
                           if (e.key === 'Escape') setEditingSessionId(null);
                         }}
-                        onBlur={() => handleRenameSession(session.id, editingSessionName)}
+                        onBlur={() => handleRenameSession(session.session_id, editingSessionName)}
                         autoFocus
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                       />
                     ) : (
                       <Text size="2" weight="medium" truncate>
-                        {session.name}
+                        {session.alias}
                       </Text>
                     )}
                     <Text size="1" color="gray">
-                      {session.messageCount} messages
+                      {session.message_count} messages
                     </Text>
                   </Flex>
                   
                   <Flex gap="1" onClick={(e) => e.stopPropagation()}>
-                    {editingSessionId === session.id ? (
+                    {editingSessionId === session.session_id ? (
                       <>
                         <IconButton
                           size="1"
                           variant="ghost"
-                          onClick={() => handleRenameSession(session.id, editingSessionName)}
+                          onClick={() => handleRenameSession(session.session_id, editingSessionName)}
                         >
                           <CheckIcon />
                         </IconButton>
@@ -174,8 +171,8 @@ export function SessionList({
                         size="1"
                         variant="ghost"
                         onClick={() => {
-                          setEditingSessionId(session.id);
-                          setEditingSessionName(session.name);
+                          setEditingSessionId(session.session_id);
+                          setEditingSessionName(session.alias);
                         }}
                       >
                         <Pencil1Icon />
@@ -191,7 +188,7 @@ export function SessionList({
                       <AlertDialog.Content style={{ maxWidth: 450 }}>
                         <AlertDialog.Title>Delete Session</AlertDialog.Title>
                         <AlertDialog.Description size="2">
-                          Are you sure you want to delete "{session.name}"? This action cannot be undone.
+                          Are you sure you want to delete "{session.alias}"? This action cannot be undone.
                         </AlertDialog.Description>
 
                         <Flex gap="3" mt="4" justify="end">
@@ -199,7 +196,7 @@ export function SessionList({
                             <Button variant="soft" color="gray">Cancel</Button>
                           </AlertDialog.Cancel>
                           <AlertDialog.Action>
-                            <Button variant="solid" color="red" onClick={() => onSessionDelete(session.id)}>
+                            <Button variant="solid" color="red" onClick={() => onSessionDelete(session.session_id)}>
                               Delete Session
                             </Button>
                           </AlertDialog.Action>

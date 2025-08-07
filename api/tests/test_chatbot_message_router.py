@@ -31,7 +31,8 @@ class TestChatRouter:
         # Configure default successful responses
         mock.process_chat_request.return_value = ChatResponse(
             response="Test response",
-            session_id="test_session_123"
+            session_id="test_session_123",
+            session_alias="Test Session"
         )
         mock.get_chat_history.return_value = ChatHistoryResponse(
             messages=[
