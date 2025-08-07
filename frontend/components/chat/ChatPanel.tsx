@@ -44,7 +44,7 @@ export function ChatPanel({
                 showCloseButton={true}
                 showClearButton={true}
                 isClearing={isClearingChat}
-                canClear={canClearChat}
+                canClear={!!canClearChat}
             />
 
             <ChatMessages 

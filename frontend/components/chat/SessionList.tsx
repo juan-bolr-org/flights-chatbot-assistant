@@ -42,7 +42,7 @@ export function SessionList({
   onSessionDelete,
   onSessionRename,
   newSessionTitle = "Create New Session",
-  newSessionDescription = "Enter a name for your new chat session. Names cannot be \"default\"."
+  newSessionDescription = "Enter a name for your new chat session."
 }: SessionListProps) {
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
