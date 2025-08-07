@@ -78,8 +78,8 @@ class AgentChatService(ChatService):
         
         # Session ID should always be provided by the frontend
         session_id = request.session_id
-        if not session_id:
-            raise ValueError("Session ID is required")
+        if not isinstance(session_id, str) or not session_id.strip():
+            raise ValueError("Session ID is required and cannot be empty or whitespace")
         
         # Verify session belongs to user, create if it doesn't exist
         session = self.session_repo.find_by_user_and_session(user.id, session_id)
