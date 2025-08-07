@@ -228,7 +228,7 @@ export default function ChatPage() {
                   showCloseButton={false}
                   showClearButton={true}
                   isClearing={isClearingChat}
-                  canClear={canClearChat}
+                  canClear={!!canClearChat}
                 />
 
                 {/* Messages */}
