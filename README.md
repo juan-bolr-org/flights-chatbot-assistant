@@ -84,11 +84,28 @@ flights-chatbot-assistant/
 - **Real-time Processing**: Fast and accurate voice recognition
 
 ### Developer Experience
-- **Comprehensive Testing**: 95%+ test coverage across all layers
+- **Comprehensive Testing**: 80%+ test coverage across all layers
 - **API Documentation**: Interactive Swagger/OpenAPI documentation
 - **Development Tools**: Helper scripts for environment management
 - **Error Handling**: Structured error responses with detailed information
 - **Logging**: Comprehensive logging with Azure Application Insights integration
+
+#### Generating Coverage Report
+To verify the test coverage percentage:
+
+```bash
+# Navigate to the API directory
+cd api
+
+# Run tests with coverage tracking
+coverage run -m pytest tests
+
+# Generate coverage report
+coverage report
+
+# Optional: Generate HTML coverage report
+coverage html
+```
 
 ## 🚀 Quick Start
 
