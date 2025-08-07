@@ -16,6 +16,7 @@ The project consists of two main components:
 flights-chatbot-assistant/
 ├── frontend/          # Next.js React application
 ├── api/              # FastAPI backend service with integrated chatbot
+├── chatbot/          # RAG knowledge base system
 └── docker-compose.yml # Container orchestration
 ```
 
@@ -42,7 +43,7 @@ flights-chatbot-assistant/
 - **Agent Architecture**: LangGraph ReAct agents with tool calling
 - **Tools**: Flight search, booking, cancellation, and FAQ retrieval
 - **Memory**: Persistent conversation history per user session
-- **Knowledge Base**: Embedded FAQ system for airline policies
+- **Knowledge Base**: RAG-powered FAQ system with vector search for airline policies
 
 ## 🌟 Features
 
@@ -61,22 +62,33 @@ flights-chatbot-assistant/
 - ✅ Booking management (view, cancel)
 - ✅ Flight status tracking
 
-### AI-Powered Chatbot
-- ✅ LangGraph ReAct agent with tool calling capabilities
-- ✅ Flight search and booking through conversation
-- ✅ Booking management and cancellation via chat
-- ✅ FAQ retrieval for airline policies and procedures
-- ✅ Authentication-required chat access
-- ✅ Persistent conversation memory per user
-- ✅ Floating chat interface with message counter
+### Booking System
+- **Flight Booking**: One-click flight reservations with instant confirmation
+- **Booking Management**: View, filter, and manage all user bookings
+- **Advanced Filtering**: Filter bookings by status (booked/cancelled/completed), booking date, departure date
+- **Booking Cancellation**: Cancel upcoming bookings with business rule validation
+- **Booking History**: Complete travel history with pagination support
 
-### UI/UX Features
-- ✅ Responsive design with modern UI components
-- ✅ Dark theme with gradient animations
-- ✅ Real-time chat interface
-- ✅ Flight cards with detailed information
-- ✅ User-friendly navigation and forms
-- ✅ Token expiration popup with session extension
+### AI-Powered Chatbot
+- **Natural Language Processing**: Powered by OpenAI GPT models
+- **Flight Assistant**: Search flights, make bookings, check reservations via chat
+- **FAQ Integration**: RAG-powered knowledge base with vector search for contextual answers
+- **Tool Integration**: Direct API access for booking operations
+- **Conversation History**: Persistent chat history with user context
+- **Multi-modal Input**: Text and voice input support
+- **Knowledge Retrieval**: Semantic search through airline policies and product documentation
+
+### Voice Features
+- **Speech-to-Text**: Convert voice messages to text using Azure Cognitive Services
+- **Audio Upload**: Support for various audio formats with automatic transcription
+- **Real-time Processing**: Fast and accurate voice recognition
+
+### Developer Experience
+- **Comprehensive Testing**: 95%+ test coverage across all layers
+- **API Documentation**: Interactive Swagger/OpenAPI documentation
+- **Development Tools**: Helper scripts for environment management
+- **Error Handling**: Structured error responses with detailed information
+- **Logging**: Comprehensive logging with Azure Application Insights integration
 
 ## 🚀 Quick Start
 
@@ -101,6 +113,25 @@ API_URL=http://api:8000
 # Frontend Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
 PORT=3000
+```
+
+### Knowledge Base Setup
+
+Before using the chatbot, generate the knowledge base files:
+
+```bash
+# Navigate to chatbot directory
+cd chatbot
+
+# Install knowledge base requirements
+pip install -r requirements.txt
+
+# Generate knowledge base files using Jupyter notebook
+jupyter notebook RAG.ipynb
+
+# Execute all cells to create:
+# - knowledge_base/airline_faqs.json
+# - knowledge_base/product_docs.yaml
 ```
 
 ### Development Setup
@@ -201,7 +232,7 @@ api/
 │   │   └── logging.py    # Logging configuration
 │   ├── schemas/          # Pydantic models for request/response
 │   ├── utils/            # Utility functions and tools
-│   │   └── chatbot_tools.py # LangChain tools for flight operations
+│   │   └── chatbot_tools.py # LangChain tools for flight operations and RAG retrieval
 │   ├── models.py         # SQLAlchemy database models
 │   ├── db.py             # Database configuration
 │   └── main.py           # FastAPI application entry point
@@ -210,6 +241,18 @@ api/
 ├── Dockerfile            # Container configuration
 ├── requirements.txt      # Python dependencies
 └── README.md            # API documentation
+```
+
+### Knowledge Base (`/chatbot`)
+
+```
+chatbot/
+├── RAG.ipynb              # Jupyter notebook to generate knowledge base files
+├── knowledge_base/        # Generated knowledge base files (created by notebook)
+│   ├── airline_faqs.json  # FAQ entries in JSON format (19 entries)
+│   └── product_docs.yaml  # Product documentation in YAML format (9 entries)
+├── requirements.txt       # Knowledge base dependencies
+└── README.md             # Knowledge base documentation
 ```
 
 ## 🛠️ API Endpoints
@@ -282,7 +325,18 @@ The chatbot uses a sophisticated LangGraph ReAct agent architecture with special
 - **`book_flight`**: Create flight bookings for users
 - **`get_my_bookings`**: Retrieve user's current bookings
 - **`cancel_booking`**: Cancel existing bookings
-- **`flight_faqs`**: Search FAQ knowledge base for airline policies
+- **`flight_faqs`**: Vector-based search through RAG knowledge base for airline policies and procedures
+
+### RAG Knowledge Base System
+- **Document Generation**: Jupyter notebook-based creation of FAQ and product documentation
+- **Vector Search**: Semantic similarity search using OpenAI embeddings
+- **Contextual Retrieval**: Relevant information retrieval for query augmentation
+- **Automatic Integration**: Knowledge base files automatically loaded by chatbot tools
+- **Fallback Support**: Hardcoded FAQs as fallback if knowledge base files unavailable
+
+### Knowledge Base Content:
+- **Airline FAQs** (19 entries): Baggage policies, check-in procedures, booking changes, prohibited items, chatbot capabilities, booking management
+- **Product Documentation** (9 entries): API documentation, booking management, authentication, system features, security, customer support
 
 ### Key Features:
 - **Conversation Memory**: Maintains chat history per user session
@@ -387,6 +441,7 @@ This script tests user registration, login, flight creation, and booking operati
 
 ### Project Documentation
 - [User Stories](./user-stories.md) - Project requirements and user stories
+- [Chatbot Knowledge Base](./chatbot/README.md) - RAG system documentation
 
 ## 🤝 Contributing
 

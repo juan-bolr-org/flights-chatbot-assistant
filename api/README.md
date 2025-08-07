@@ -142,7 +142,10 @@ set SECRET_KEY=your_secret_key
 | GET    | /flights/list                      | List all flights                  |
 | POST   | /flights                           | Create a new flight               |
 | POST   | /bookings                          | Book a flight                     |
-| GET    | /bookings/users/{userId}/bookings  | View user bookings                |
+| GET    | /bookings/user                     | View user bookings (with filters) |
 | PATCH  | /bookings/{bookingId}              | Update/cancel a booking           |
 | DELETE | /bookings/{bookingId}              | Cancel a booking                  |
 | POST   | /chat                              | Chatbot interaction (FAQs)        |
+| GET    | /chat/history                      | Get chat history                  |
+| DELETE | /chat/history                      | Clear chat history                |
+| POST   | /speech/transcribe                 | Speech-to-text transcription      |

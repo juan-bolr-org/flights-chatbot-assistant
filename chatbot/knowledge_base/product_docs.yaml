@@ -1,0 +1,21 @@
+- 'Flight Search API: The flight search functionality allows users to search for flights
+  by origin, destination, and departure date. All search parameters are optional for
+  flexible searching. Users can also paginate through results.'
+- 'Booking Management: Users can create, view, update, and cancel flight bookings
+  through the system. Advanced filtering options are available including status filters,
+  date filters, and pagination support.'
+- 'User Authentication: The system uses JWT tokens for secure user authentication.
+  All API calls require a valid bearer token for access control.'
+- 'Flight Listing: Users can browse all available flights with pagination support.
+  The system shows comprehensive flight information including prices, airlines, and
+  schedules.'
+- 'Booking Status Management: Bookings can have different statuses - booked (active),
+  cancelled, or completed. Users can update booking statuses and view booking history.'
+- 'Real-time Updates: The system provides real-time information about flight delays,
+  cancellations, and schedule changes through notifications.'
+- 'Multi-channel Support: Users can interact with the system through web interface,
+  mobile app, or chatbot for maximum convenience.'
+- 'Data Security: All user data is encrypted and securely stored. The system follows
+  industry best practices for data protection and privacy.'
+- 'Customer Support: Users can access 24/7 customer support through various channels
+  including chat, email, and phone for assistance with their bookings.'
