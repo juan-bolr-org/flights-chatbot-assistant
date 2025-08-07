@@ -102,7 +102,6 @@ export function SessionList({
                 </Dialog.Close>
                 <Button 
                   onClick={handleCreateSession}
-                  disabled={newSessionName.toLowerCase() === 'default'}
                 >
                   Create Session
                 </Button>
