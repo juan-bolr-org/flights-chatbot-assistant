@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Box, ScrollArea, Text, Flex } from '@radix-ui/themes';
+import ReactMarkdown from 'react-markdown';
 import { ChatMessage, hasTimestamp } from './types';
 
 interface ChatMessagesProps {
@@ -53,9 +54,93 @@ export function ChatMessages({ messages, isLoadingHistory }: ChatMessagesProps) 
                   border: msg.role === 'user' ? '1px solid var(--accent-7)' : '1px solid var(--gray-6)',
                 }}
               >
-                <Text size="2" style={{ whiteSpace: 'pre-wrap' }}>
-                  {msg.content}
-                </Text>
+                <div style={{ fontSize: '14px' }}>
+                  <ReactMarkdown
+                    components={{
+                      // Customize markdown components to fit the design
+                      p: ({ children }) => (
+                        <Text size="2" style={{ display: 'block', margin: '0 0 8px 0' }}>
+                          {children}
+                        </Text>
+                      ),
+                      code: ({ children, className }) => {
+                        const isInline = !className;
+                        return isInline ? (
+                          <code style={{
+                            backgroundColor: 'var(--gray-4)',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            fontSize: '13px',
+                            fontFamily: 'monospace'
+                          }}>
+                            {children}
+                          </code>
+                        ) : (
+                          <pre style={{
+                            backgroundColor: 'var(--gray-4)',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            overflow: 'auto',
+                            fontSize: '13px',
+                            fontFamily: 'monospace',
+                            margin: '8px 0'
+                          }}>
+                            <code>{children}</code>
+                          </pre>
+                        );
+                      },
+                      ul: ({ children }) => (
+                        <ul style={{ paddingLeft: '16px', margin: '8px 0' }}>
+                          {children}
+                        </ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol style={{ paddingLeft: '16px', margin: '8px 0' }}>
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => (
+                        <li style={{ marginBottom: '4px' }}>
+                          <Text size="2">{children}</Text>
+                        </li>
+                      ),
+                      strong: ({ children }) => (
+                        <strong style={{ fontWeight: '600' }}>{children}</strong>
+                      ),
+                      em: ({ children }) => (
+                        <em style={{ fontStyle: 'italic' }}>{children}</em>
+                      ),
+                      h1: ({ children }) => (
+                        <Text size="5" weight="bold" style={{ display: 'block', margin: '12px 0 8px 0' }}>
+                          {children}
+                        </Text>
+                      ),
+                      h2: ({ children }) => (
+                        <Text size="4" weight="bold" style={{ display: 'block', margin: '10px 0 6px 0' }}>
+                          {children}
+                        </Text>
+                      ),
+                      h3: ({ children }) => (
+                        <Text size="3" weight="bold" style={{ display: 'block', margin: '8px 0 4px 0' }}>
+                          {children}
+                        </Text>
+                      ),
+                      blockquote: ({ children }) => (
+                        <blockquote style={{
+                          borderLeft: '3px solid var(--gray-6)',
+                          paddingLeft: '12px',
+                          margin: '8px 0',
+                          fontStyle: 'italic',
+                          color: 'var(--gray-11)'
+                        }}>
+                          {children}
+                        </blockquote>
+                      ),
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
                 {hasTimestamp(msg) && (
                   <Text size="1" color="gray" style={{ display: 'block', marginTop: '4px' }}>
                     {msg.timestamp.toLocaleTimeString()}

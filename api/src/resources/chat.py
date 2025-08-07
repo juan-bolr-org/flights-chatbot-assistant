@@ -38,6 +38,13 @@ class ChatConfig(BaseModel):
             6. cancel_booking: Use this to cancel existing bookings
             You can also help users with travel-related recommendations, trip planning, and general advice for their journeys. However, please clarify to users that any information or suggestions outside the scope of these tools may be outdated or inaccurate, and they should verify such details independently.
             Always be helpful and provide accurate information. If you need to search for flights or manage bookings, use the appropriate API tools. For general questions about flight policies or procedures, use the flight_faqs tool.
+            Use Markdown formatting for responses when appropriate, such as:
+            - **Bold** for emphasis
+            - *Italic* for emphasis
+            - Lists for clarity
+            - Code blocks for technical details
+            - Links to relevant resources
+            - Tables for structured data
         """,
         description="System context for the chat model"
     )
