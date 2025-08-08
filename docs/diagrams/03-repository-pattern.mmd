@@ -3,30 +3,36 @@ graph TB
         UserRouter[User Router]
         FlightRouter[Flight Router]
         BookingRouter[Booking Router]
+        ChatRouter[Chat Router]
+        VoiceRouter[Voice Router]
     end
     
     subgraph ServiceLayer["Service Layer"]
         UserService[User Service]
         FlightService[Flight Service]
         BookingService[Booking Service]
+        ChatService[Chat Service]
     end
     
     subgraph RepositoryAbstractions["Repository Abstractions"]
         IUserRepo[UserRepository ABC]
         IFlightRepo[FlightRepository ABC]
         IBookingRepo[BookingRepository ABC]
+        IChatRepo[ChatbotMessageRepository ABC]
     end
     
     subgraph RepositoryImplementations["Repository Implementations"]
         UserSQLite[UserSqliteRepository]
         FlightSQLite[FlightSqliteRepository]
         BookingSQLite[BookingSqliteRepository]
+        ChatSQLite[ChatbotMessageSqliteRepository]
     end
     
     subgraph DataModels["Data Models"]
         UserModel[User Model]
         FlightModel[Flight Model]
         BookingModel[Booking Model]
+        ChatModel[ChatbotMessage Model]
     end
     
     subgraph Database["Database"]
@@ -38,36 +44,58 @@ graph TB
         Session[Database Session]
     end
     
+    subgraph ChatbotTools["Chatbot Tools"]
+        FlightTools[Flight Tools]
+        BookingTools[Booking Tools]
+        RAGTools[RAG Tools]
+        KnowledgeLoader[Knowledge Loader]
+    end
+    
     UserRouter --> UserService
     FlightRouter --> FlightService
     BookingRouter --> BookingService
+    ChatRouter --> ChatService
+    VoiceRouter --> ChatService
     
     UserService --> IUserRepo
     FlightService --> IFlightRepo
     BookingService --> IBookingRepo
     BookingService --> IFlightRepo
+    ChatService --> IChatRepo
     
     IUserRepo -.->|implements| UserSQLite
     IFlightRepo -.->|implements| FlightSQLite
     IBookingRepo -.->|implements| BookingSQLite
+    IChatRepo -.->|implements| ChatSQLite
     
     UserSQLite --> UserModel
     FlightSQLite --> FlightModel
     BookingSQLite --> BookingModel
+    ChatSQLite --> ChatModel
     
     UserModel --> SQLite
     FlightModel --> SQLite
     BookingModel --> SQLite
+    ChatModel --> SQLite
     
     DI --> UserSQLite
     DI --> FlightSQLite
     DI --> BookingSQLite
+    DI --> ChatSQLite
     DI --> Session
     Session --> SQLite
     
     UserService -.->|depends on| DI
     FlightService -.->|depends on| DI
     BookingService -.->|depends on| DI
+    ChatService -.->|depends on| DI
+    
+    ChatService --> FlightTools
+    ChatService --> BookingTools
+    ChatService --> RAGTools
+    FlightTools --> FlightService
+    BookingTools --> BookingService
+    RAGTools --> KnowledgeLoader
     
     classDef router fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
@@ -76,6 +104,7 @@ graph TB
     classDef model fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef db fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef di fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef tools fill:#fff8e1,stroke:#f57c00,stroke-width:2px
     
     class RouterLayer router
     class ServiceLayer service
@@ -84,3 +113,4 @@ graph TB
     class DataModels model
     class Database db
     class DependencyInjection di
+    class ChatbotTools tools

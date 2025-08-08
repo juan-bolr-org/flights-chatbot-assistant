@@ -2,6 +2,7 @@ graph TB
     subgraph FastAPIApp["FastAPI Application"]
         Main[main.py]
         Routers[Route Handlers]
+        VoiceRouter[Voice Chat Router]
     end
     
     subgraph BusinessLayer["Business Layer"]
@@ -32,6 +33,7 @@ graph TB
         Logging[Logging System]
         Dependencies[DI Container]
         Resources[App Resources]
+        AudioProcessor[Audio Processing]
     end
     
     subgraph AIIntegration["AI Integration"]
@@ -39,14 +41,30 @@ graph TB
         LangGraph[LangGraph Agent]
         Tools[Flight Tools]
         Memory[Memory Store]
+        RAGRetriever[RAG Retriever Tool]
+        KnowledgeLoader[Knowledge Base Loader]
+    end
+    
+    subgraph KnowledgeBase["Knowledge Base"]
+        PickleFile[knowledge_base.pkl]
+        JSONFiles[airline_faqs.json]
+        YAMLFiles[product_docs.yaml]
+    end
+    
+    subgraph ExternalServices["External Services"]
+        OpenAI[OpenAI API]
+        AzureSpeech[Azure Speech API]
+        AppInsights[Azure App Insights]
     end
     
     Main --> Routers
+    Main --> VoiceRouter
     Routers --> UserService
     Routers --> FlightService
     Routers --> BookingService
     Routers --> ChatService
     Routers --> HealthService
+    VoiceRouter --> ChatService
     
     UserService --> UserRepo
     FlightService --> FlightRepo
@@ -68,13 +86,23 @@ graph TB
     Routers --> Dependencies
     Dependencies --> Resources
     Resources --> Logging
+    VoiceRouter --> AudioProcessor
     
     ChatService --> ChatManager
     ChatManager --> LangGraph
     LangGraph --> Tools
     LangGraph --> Memory
+    LangGraph --> RAGRetriever
     Tools --> FlightService
     Tools --> BookingService
+    RAGRetriever --> KnowledgeLoader
+    KnowledgeLoader --> PickleFile
+    KnowledgeLoader --> JSONFiles
+    KnowledgeLoader --> YAMLFiles
+    
+    ChatManager --> OpenAI
+    AudioProcessor --> AzureSpeech
+    Logging --> AppInsights
     
     classDef app fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef business fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
@@ -82,6 +110,8 @@ graph TB
     classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef cross fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef ai fill:#f1f8e9,stroke:#388e3c,stroke-width:2px
+    classDef kb fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef external fill:#fff8e1,stroke:#f57c00,stroke-width:2px
     
     class FastAPIApp app
     class BusinessLayer business
@@ -89,3 +119,5 @@ graph TB
     class DataLayer data
     class CrossCutting cross
     class AIIntegration ai
+    class KnowledgeBase kb
+    class ExternalServices external

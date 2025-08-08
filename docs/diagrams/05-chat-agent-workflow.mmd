@@ -1,65 +1,108 @@
 graph TB
     subgraph UserInteraction["User Interaction"]
         UserInput[User Message]
+        VoiceInput[Voice Message]
         ChatUI[Chat Interface]
     end
     
     subgraph APIProcessing["API Processing"]
         ChatRouter[Chat Router]
+        VoiceRouter[Voice Router]
         ChatService[Chat Service]
         Auth[Authentication Check]
+        AudioProcessor[Audio Processing]
     end
     
     subgraph LangGraphAgent["LangGraph Agent"]
         Agent[ReAct Agent]
         Memory[Conversation Memory]
         Planner[Action Planner]
+        MemorySaver[MemorySaver Checkpoints]
     end
     
     subgraph AvailableTools["Available Tools"]
         SearchTool[Search Flights]
+        ListTool[List All Flights]
         BookTool[Book Flight]
         BookingsTool[Get Bookings]
         CancelTool[Cancel Booking]
-        FAQTool[FAQ Search]
+        FAQTool[FAQ RAG Search]
+    end
+    
+    subgraph KnowledgeBase["Knowledge Base"]
+        RAGRetriever[RAG Retriever]
+        VectorStore[In-Memory Vector Store]
+        KnowledgeLoader[Knowledge Loader]
+        PickleFile[knowledge_base.pkl]
+        FAQJson[airline_faqs.json]
+        DocsYaml[product_docs.yaml]
     end
     
     subgraph BackendServices["Backend Services"]
         FlightService[Flight Service]
         BookingService[Booking Service]
-        FAQStore[FAQ Knowledge Base]
+        UserService[User Service]
     end
     
     subgraph Database["Database"]
         FlightDB[Flight Data]
         BookingDB[Booking Data]
+        UserDB[User Data]
         ChatHistory[Chat History]
+        ChatMemoryDB[Chat Memory Store]
+    end
+    
+    subgraph ExternalServices["External Services"]
+        OpenAI[OpenAI GPT-4]
+        AzureSpeech[Azure Speech Service]
     end
     
     UserInput --> ChatUI
+    VoiceInput --> ChatUI
     ChatUI --> ChatRouter
+    ChatUI --> VoiceRouter
+    
+    VoiceRouter --> AudioProcessor
+    AudioProcessor --> AzureSpeech
+    AzureSpeech --> ChatService
+    
     ChatRouter --> Auth
+    VoiceRouter --> Auth
     Auth --> ChatService
     ChatService --> Agent
     
     Agent --> Memory
     Agent --> Planner
+    Agent --> MemorySaver
     Planner --> SearchTool
+    Planner --> ListTool
     Planner --> BookTool
     Planner --> BookingsTool
     Planner --> CancelTool
     Planner --> FAQTool
     
     SearchTool --> FlightService
+    ListTool --> FlightService
     BookTool --> BookingService
     BookingsTool --> BookingService
     CancelTool --> BookingService
-    FAQTool --> FAQStore
+    FAQTool --> RAGRetriever
+    
+    RAGRetriever --> VectorStore
+    RAGRetriever --> KnowledgeLoader
+    KnowledgeLoader --> PickleFile
+    KnowledgeLoader --> FAQJson
+    KnowledgeLoader --> DocsYaml
     
     FlightService --> FlightDB
     BookingService --> BookingDB
+    BookingService --> FlightDB
+    UserService --> UserDB
     ChatService --> ChatHistory
+    Memory --> ChatMemoryDB
+    MemorySaver --> ChatMemoryDB
     
+    Agent --> OpenAI
     Agent -->|Final Response| ChatService
     ChatService -->|Save Conversation| ChatHistory
     ChatService --> ChatRouter
@@ -70,12 +113,16 @@ graph TB
     classDef api fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
     classDef agent fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     classDef tools fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef services fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef kb fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef services fill:#f1f8e9,stroke:#388e3c,stroke-width:2px
     classDef database fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef external fill:#fff8e1,stroke:#f57c00,stroke-width:2px
     
     class UserInteraction interaction
     class APIProcessing api
     class LangGraphAgent agent
     class AvailableTools tools
+    class KnowledgeBase kb
     class BackendServices services
     class Database database
+    class ExternalServices external
