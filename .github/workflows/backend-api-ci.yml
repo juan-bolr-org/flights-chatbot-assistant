@@ -34,11 +34,31 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('api/requirements.txt', 'api/requirements-test.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           cd api
           pip install -r requirements.txt
           pip install -r requirements-test.txt
+
+      - name: Generate and copy knowledge base
+        run: |
+          pip install jupyter nbconvert pyyaml
+          cd chatbot
+          jupyter nbconvert --to notebook --execute RAG.ipynb --output RAG_executed.ipynb
+          
+          if [ ! -f "knowledge_base/knowledge_base.pkl" ]; then
+            echo "Error: knowledge_base.pkl not found!"
+            exit 1
+          fi
+          echo "Knowledge base generated successfully."
+          ls -la knowledge_base/
+
+          cd ..
+          mkdir -p api/chatbot/knowledge_base
+          cp chatbot/knowledge_base/* api/chatbot/knowledge_base/
+          echo "Knowledge base files copied to api/chatbot/knowledge_base/"
+          ls -la api/chatbot/knowledge_base/
 
       - name: Run tests
         run: |
@@ -52,6 +72,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Generate and copy knowledge base
+        run: |
+          pip install jupyter nbconvert pyyaml
+          cd chatbot
+          jupyter nbconvert --to notebook --execute RAG.ipynb --output RAG_executed.ipynb
+          
+          if [ ! -f "knowledge_base/knowledge_base.pkl" ]; then
+            echo "Error: knowledge_base.pkl not found!"
+            exit 1
+          fi
+
+          echo "Knowledge base generated successfully."
+          ls -la knowledge_base/
+
+          cd ..
+          mkdir -p api/chatbot/knowledge_base
+          cp chatbot/knowledge_base/* api/chatbot/knowledge_base/
+          echo "Knowledge base files copied to api/chatbot/knowledge_base/"
+          ls -la api/chatbot/knowledge_base/
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
