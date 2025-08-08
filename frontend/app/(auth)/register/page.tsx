@@ -16,6 +16,7 @@ import {
   Text,
 } from '@radix-ui/themes';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { useUser } from '@/context/UserContext';
 
 const registerSchema = z
   .object({
@@ -33,6 +34,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { refreshUser } = useUser();
 
   const {
     register,
@@ -54,9 +56,12 @@ export default function RegisterPage() {
       });
 
       if (response) {
-        localStorage.setItem('token', response.access_token);
-        localStorage.setItem('registerSuccess', 'true');
-        router.push('/register/success');
+        if (response.detail && response.detail.error_code) {
+          setError('root', { message: response.detail.message || 'Registration failed' });
+        } else {
+          await refreshUser();
+          router.push('/');
+        }
       } else {
         setError('root', { message: typeof response || 'Could not register the account' });
       }
