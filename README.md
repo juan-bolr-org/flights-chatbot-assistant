@@ -22,7 +22,7 @@ flights-chatbot-assistant/
 
 ## 📊 Architecture & Flow Diagrams
 
-Find all tecnical and flow diagrams in [`docs/diagrams`](docs/diagrams)
+Find all technical and flow diagrams at [`docs/diagrams`](docs/diagrams)
 
 ### Technology Stack
 
