@@ -86,7 +86,7 @@ class ChatbotMessageSqliteRepository(ChatbotMessageRepository):
             ChatbotMessage.user_id == user_id,
             ChatbotMessage.session_id == session_id
         ).order_by(
-            ChatbotMessage.created_at.desc()
+            ChatbotMessage.created_at.asc()
         ).offset(offset).limit(limit).all()
     
     def count_by_user_id(self, user_id: int) -> int:
