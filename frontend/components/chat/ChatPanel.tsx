@@ -21,7 +21,7 @@ export function ChatPanel({
     if (!user) {
         return null;
     }
-    const sessionId = `${user?.name.trim().split(' ').join('-')}-session`;
+    const sessionId = `${user.name.trim().split(' ').join('-')}-session`;
 
 
     const {
