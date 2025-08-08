@@ -331,3 +331,21 @@ class TestBookingRepository:
         if actual_cancelled_at.tzinfo is None:
             actual_cancelled_at = actual_cancelled_at.replace(tzinfo=timezone.utc)
         assert actual_cancelled_at == precise_time
+    
+    # ===== DEPENDENCY INJECTION TESTS =====
+    
+    def test_create_booking_repository_function(self):
+        """Test the dependency injection function for creating booking repository."""
+        from repository.booking import create_booking_repository
+        from unittest.mock import Mock
+        
+        # Mock database session
+        mock_db = Mock()
+        
+        # Test the function
+        repo = create_booking_repository(mock_db)
+        
+        # Verify it returns the correct type
+        from repository.booking import BookingSqliteRepository
+        assert isinstance(repo, BookingSqliteRepository)
+        assert repo.db == mock_db

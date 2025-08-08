@@ -50,11 +50,18 @@ export default function Header() {
         </Box>
 
         {hasMounted && user && (
-          <Box>
-            <Button variant="ghost" asChild>
-              <Link href="/bookings">My Bookings</Link>
-            </Button>
-          </Box>
+          <>
+            <Box>
+              <Button variant="ghost" asChild>
+                <Link href="/bookings">My Bookings</Link>
+              </Button>
+            </Box>
+            <Box>
+              <Button variant="ghost" asChild>
+                <Link href="/chat">Chat</Link>
+              </Button>
+            </Box>
+          </>
         )}
 
         {hasMounted ? (

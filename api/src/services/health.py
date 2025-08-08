@@ -71,7 +71,6 @@ class SystemHealthService(HealthService):
             self._check_chat_health(health_status)
             self._check_chat_memory_health(health_status)
             self._check_crypto_health(health_status)
-            self._check_scheduler_health(health_status)
             self._check_logging_health(health_status)
             self._check_speech_health(health_status)
         else:
@@ -162,33 +161,6 @@ class SystemHealthService(HealthService):
         except Exception as e:
             logger.warning(f"Crypto health check failed: {e}")
             health_status["resources"]["details"]["crypto"] = {
-                "status": "unhealthy",
-                "initialized": False,
-                "error": str(e)
-            }
-            health_status["status"] = "degraded"
-    
-    def _check_scheduler_health(self, health_status: Dict[str, Any]) -> None:
-        """Check scheduler health."""
-        try:
-            if self.app_res.scheduler:
-                scheduler_running = self.app_res.scheduler.is_running()
-                health_status["resources"]["details"]["scheduler"] = {
-                    "status": "running" if scheduler_running else "stopped",
-                    "initialized": True,
-                    "running": scheduler_running
-                }
-                logger.debug(f"Scheduler health check: {'running' if scheduler_running else 'stopped'}")
-            else:
-                health_status["resources"]["details"]["scheduler"] = {
-                    "status": "not_configured",
-                    "initialized": False,
-                    "running": False
-                }
-                logger.debug("Scheduler health check: not_configured")
-        except Exception as e:
-            logger.warning(f"Scheduler health check failed: {e}")
-            health_status["resources"]["details"]["scheduler"] = {
                 "status": "unhealthy",
                 "initialized": False,
                 "error": str(e)

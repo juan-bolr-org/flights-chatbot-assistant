@@ -1,0 +1,31 @@
+
+name: Frontend Build CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - .github/workflows/frontend-ci.yml
+
+
+permissions:
+  contents: read
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend
+          push: false
+          tags: flights-frontend:ci-${{ github.sha }}
+

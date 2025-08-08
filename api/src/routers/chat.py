@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from repository import User
-from schemas import ChatRequest, ChatResponse, ChatHistoryResponse
+from schemas import ChatRequest, ChatResponse, ChatHistoryResponse, ChatSessionsResponse, DeleteSessionResponse, CreateSessionRequest, CreateSessionResponse, UpdateSessionAliasRequest, UpdateSessionAliasResponse
 from resources.dependencies import get_current_user
 from resources.logging import get_logger
 from services import ChatService, create_chat_service
@@ -13,22 +13,28 @@ logger = get_logger("chat_router")
 @router.post("", response_model=ChatResponse)
 async def chat_endpoint(
     request: ChatRequest, 
+    req: Request,
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
     try:
         logger.debug(f"Processing chat request for user {user.id}")
         
-        # Process chat through service
-        answer = await chat_service.process_chat_request(user, request)
+        # Get JWT token from request state (set by auth middleware)
+        jwt_token = getattr(req.state, 'jwt_token', None)
+        if not jwt_token:
+            raise HTTPException(status_code=401, detail="No authentication token available")
+        
+        # Process chat through service (returns ChatResponse with session_id)
+        response = await chat_service.process_chat_request(user, request, jwt_token)
         
         # Save to database through service
-        await chat_service.save_chat_message(user.id, request.content, answer)
+        await chat_service.save_chat_message(user.id, response.session_id, request.content, response.response)
         
-        logger.info(f"Successfully processed chat request for user {user.email}")
-        logger.debug(f"Response length: {len(answer)} characters")
+        logger.info(f"Successfully processed chat request for user {user.email} with session {response.session_id}")
+        logger.debug(f"Response length: {len(response.response)} characters")
         
-        return ChatResponse(response=answer)
+        return response
         
     except ApiException as e:
         logger.error(f"Error processing chat request for user {user.email}: {e.message}", exc_info=True)
@@ -42,16 +48,17 @@ async def chat_endpoint(
 
 @router.get("/history", response_model=ChatHistoryResponse)
 def get_chat_history(
-    limit: int = 50,
-    offset: int = 0,
+    session_id: str = Query(..., description="Session ID to filter history"),
+    limit: int = Query(50, ge=1, le=100, description="Number of messages to retrieve"),
+    offset: int = Query(0, ge=0, description="Number of messages to skip"),
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
     """
-    Get chat history for the current user with pagination.
+    Get chat history for the current user for a specific session.
     """
     try:
-        history = chat_service.get_chat_history(user.id, limit=limit, offset=offset)
+        history = chat_service.get_chat_history(user.id, session_id=session_id, limit=limit, offset=offset)
         
         logger.info(f"Retrieved {len(history.messages)} chat messages for user {user.email} (total: {history.total_count})")
         
@@ -66,16 +73,17 @@ def get_chat_history(
 
 @router.delete("/history")
 def clear_chat_history(
+    session_id: str = Query(..., description="Session ID to clear specific session"),
     user: User = Depends(get_current_user),
     chat_service: ChatService = Depends(create_chat_service)
 ):
     """
-    Clear all chat history for the current user.
+    Clear chat history for the current user for a specific session.
     """
     try:
-        result = chat_service.clear_chat_history(user.id)
+        result = chat_service.clear_chat_history(user.id, session_id=session_id)
         
-        logger.info(f"Cleared {result['deleted_count']} chat messages for user {user.email}")
+        logger.info(f"Cleared {result['deleted_count']} chat messages for user {user.email}, session {session_id}")
         
         return result
         
@@ -84,4 +92,96 @@ def clear_chat_history(
         raise HTTPException(
             status_code=500,
             detail=f"Error clearing chat history: {str(e)}"
+        )
+
+@router.get("/sessions", response_model=ChatSessionsResponse)
+async def get_user_sessions(
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Get all chat sessions for the current user.
+    """
+    try:
+        sessions = await chat_service.get_user_sessions(user.id)
+        
+        logger.info(f"Retrieved {sessions.total_count} sessions for user {user.email}")
+        
+        return sessions
+        
+    except Exception as e:
+        logger.error(f"Error retrieving sessions for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving sessions: {str(e)}"
+        )
+
+@router.delete("/sessions/{session_id}", response_model=DeleteSessionResponse)
+def delete_session(
+    session_id: str,
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Delete a specific chat session for the current user.
+    """
+    try:
+        result = chat_service.delete_session(user.id, session_id)
+        
+        logger.info(f"Deleted session {session_id} for user {user.email} ({result.deleted_count} messages)")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error deleting session {session_id} for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error deleting session: {str(e)}"
+        )
+
+@router.post("/sessions", response_model=CreateSessionResponse)
+async def create_session(
+    request: CreateSessionRequest,
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Create a new chat session for the current user.
+    """
+    try:
+        result = await chat_service.create_session(user.id, request)
+        
+        logger.info(f"Created new session {result.session_id} with alias '{result.alias}' for user {user.email}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error creating session for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating session: {str(e)}"
+        )
+
+@router.put("/sessions/{session_id}/alias", response_model=UpdateSessionAliasResponse)
+def update_session_alias(
+    session_id: str,
+    request: UpdateSessionAliasRequest,
+    user: User = Depends(get_current_user),
+    chat_service: ChatService = Depends(create_chat_service)
+):
+    """
+    Update the alias of a specific chat session for the current user.
+    """
+    try:
+        result = chat_service.update_session_alias(user.id, session_id, request)
+        
+        logger.info(f"Updated alias for session {session_id} to '{result.alias}' for user {user.email}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error updating session alias for {session_id} for user {user.email}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating session alias: {str(e)}"
         )

@@ -16,6 +16,7 @@ class User(Base):
     token_expiration = Column(DateTime, nullable=True)
     bookings = relationship('Booking', back_populates='user')
     chatbot_messages = relationship('ChatbotMessage', back_populates='user')
+    chat_sessions = relationship('ChatSession', back_populates='user')
 
 
 class Flight(Base):
@@ -43,12 +44,24 @@ class Booking(Base):
     flight = relationship('Flight', back_populates='bookings')
 
 
+class ChatSession(Base):
+    __tablename__ = 'chat_sessions'
+    id = Column(String, primary_key=True, index=True)  # This will be the session_id
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    alias = Column(String, nullable=False)  # User-friendly name
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
+    user = relationship('User', back_populates='chat_sessions')
+    messages = relationship('ChatbotMessage', back_populates='session')
+
+
 class ChatbotMessage(Base):
     __tablename__ = 'chatbot_messages'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    session_id = Column(String, nullable=False)
+    session_id = Column(String, ForeignKey('chat_sessions.id'), nullable=False)
     user_message = Column(Text, nullable=False)
     bot_response = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     user = relationship('User', back_populates='chatbot_messages')
+    session = relationship('ChatSession', back_populates='messages')
