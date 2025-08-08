@@ -246,7 +246,7 @@ class AgentChatService(ChatService):
         deleted_messages = self.chat_repo.delete_by_user_id_and_session(user_id, session_id)
         
         # Delete the session record
-        self.session_repo.delete_by_id(session_id)
+        self.session_repo.delete_by_id(user_id, session_id)
         
         logger.debug(f"Deleted session {session_id} and {deleted_messages} messages for user {user_id}")
         
