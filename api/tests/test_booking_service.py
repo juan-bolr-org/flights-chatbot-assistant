@@ -562,3 +562,23 @@ class TestBookingService:
             booking_service.get_user_bookings(sample_user)
         
         assert "Database connection failed" in str(exc_info.value)
+    
+    # ===== DEPENDENCY INJECTION TESTS =====
+    
+    def test_create_booking_service_function(self):
+        """Test the dependency injection function for creating booking service."""
+        from services.booking import create_booking_service
+        from unittest.mock import Mock
+        
+        # Mock dependencies
+        mock_booking_repo = Mock()
+        mock_flight_repo = Mock()
+        
+        # Test the function
+        service = create_booking_service(mock_booking_repo, mock_flight_repo)
+        
+        # Verify it returns the correct type
+        from services.booking import BookingBusinessService
+        assert isinstance(service, BookingBusinessService)
+        assert service.booking_repo == mock_booking_repo
+        assert service.flight_repo == mock_flight_repo

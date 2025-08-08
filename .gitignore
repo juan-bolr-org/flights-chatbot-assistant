@@ -25,6 +25,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 *.db
+chat_checkpoints.db*
+*.bak
 
 # Log files
 logs/

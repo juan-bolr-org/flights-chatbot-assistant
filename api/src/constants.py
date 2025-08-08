@@ -51,6 +51,7 @@ class ApplicationConstants:
     DEFAULT_LOG_LEVEL = "INFO"
     DEFAULT_LOG_FILE = "logs/flights-chatbot.log"
     DEFAULT_DATABASE_URL = "sqlite:///./flights.db"
+    DEFAULT_CHAT_CHECKPOINT_DB = "sqlite+aiosqlite:///./chat_checkpoints.db"
 
 class EnvironmentKeys:
     """Environment variable keys."""
@@ -62,6 +63,7 @@ class EnvironmentKeys:
     LOG_FILE = "LOG_FILE"
     ERROR_LOG_FILE = "ERROR_LOG_FILE"
     DATABASE_URL = "DATABASE_URL"
+    CHAT_CHECKPOINT_DB = "CHAT_CHECKPOINT_DB"
     AZURE_SPEECH_KEY = "AZURE_SPEECH_KEY"
     AZURE_SPEECH_REGION = "AZURE_SPEECH_REGION"
     AZURE_SPEECH_ENDPOINT = "AZURE_SPEECH_ENDPOINT"

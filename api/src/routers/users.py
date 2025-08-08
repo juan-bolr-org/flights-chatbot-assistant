@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from datetime import timedelta
 from schemas import UserCreate, UserLogin, Token, UserResponse
 from resources.logging import get_logger

@@ -1,7 +1,6 @@
 from .database import db_manager, DatabaseManager, DatabaseConfig
 from .chat import chat_manager, ChatManager, ChatConfig
 from .crypto import crypto_manager, CryptoManager, CryptoConfig
-from .scheduler import TokenCleanupScheduler, SchedulerConfig
 from .logging import logging_manager, LoggingManager, LoggingConfig
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -14,9 +13,7 @@ class AppResourcesConfig(BaseModel):
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     chat: ChatConfig = Field(default_factory=ChatConfig)
     crypto: CryptoConfig = Field(default_factory=CryptoConfig)
-    scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     auto_seed_database: bool = Field(default=True, description="Auto-seed database if empty")
-    auto_start_scheduler: bool = Field(default=True, description="Auto-start scheduler on initialization")
 
 
 class AppResources:
@@ -28,7 +25,6 @@ class AppResources:
         self.database: DatabaseManager = db_manager
         self.chat: ChatManager = chat_manager
         self.crypto: CryptoManager = crypto_manager
-        self.scheduler: Optional[TokenCleanupScheduler] = None
         self._is_initialized: bool = False
     
     def initialize_all(self) -> None:
@@ -68,12 +64,6 @@ class AppResources:
             logger.debug("Initializing crypto components...")
             self.crypto.initialize()
             
-            # 7. Initialize and start scheduler
-            if self.config.auto_start_scheduler:
-                logger.debug("Initializing and starting scheduler...")
-                self.scheduler = TokenCleanupScheduler(self.chat, self.config.scheduler)
-                self.scheduler.start()
-            
             self._is_initialized = True
             logger.info("All application resources initialized successfully")
             
@@ -85,9 +75,6 @@ class AppResources:
         """Shutdown all application resources."""
         logger = self.logging.get_logger("app_resources")
         logger.info("Shutting down application resources...")
-        if self.scheduler and self.scheduler.is_running():
-            logger.debug("Stopping scheduler...")
-            self.scheduler.stop()
         logger.info("Application resources shutdown completed")
     
     def get_database_session(self) -> Session:
