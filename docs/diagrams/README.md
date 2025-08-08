@@ -14,6 +14,7 @@ This directory contains individual Mermaid diagram files that can be converted t
 | `06-booking-flow.mmd` | Flight booking process through repository pattern | Sequence Diagram |
 | `07-knowledge-base-generation.mmd` | Generative AI Integration Diagram | Flow Diagram |
 | `08-flight-assistant-infra.png` | Infrastructure Diagram | Architecture Diagram |
+| `09-flight-assistant-CICD.png` | CICD Flow Diagram | Flow Diagram |
 
 ## 🎨 Converting to Images
 
