@@ -1,0 +1,97 @@
+graph TB
+    subgraph Development["Development Environment"]
+        RAGNotebook[RAG.ipynb]
+        Developer[Developer]
+    end
+    
+    subgraph KnowledgeGeneration["Knowledge Base Generation"]
+        FAQGenerator[FAQ Data Generator]
+        DocsGenerator[Product Docs Generator]
+        FileWriter[File Writer]
+        PickleSerializer[Pickle Serializer]
+    end
+    
+    subgraph GeneratedFiles["Generated Files"]
+        FAQJson[airline_faqs.json]
+        DocsYaml[product_docs.yaml]
+        PickleFile[knowledge_base.pkl]
+    end
+    
+    subgraph CICDPipeline["CI/CD Pipeline"]
+        GitHubActions[GitHub Actions]
+        JupyterExecutor[Jupyter Executor]
+        FileCopier[File Copier]
+    end
+    
+    subgraph APIDeployment["API Deployment"]
+        APIDirectory[api/chatbot/knowledge_base/]
+        KnowledgeLoader[Knowledge Loader]
+        RAGRetriever[RAG Retriever Tool]
+    end
+    
+    subgraph RuntimeLoading["Runtime Loading"]
+        PathResolver[Path Resolver]
+        PickleLoader[Pickle Loader]
+        JSONLoader[JSON Loader]
+        YAMLLoader[YAML Loader]
+        FallbackData[Fallback Data]
+    end
+    
+    subgraph ChatbotRuntime["Chatbot Runtime"]
+        VectorStore[In-Memory Vector Store]
+        OpenAIEmbeddings[OpenAI Embeddings]
+        SemanticSearch[Semantic Search]
+        AgentTool[FAQ Agent Tool]
+    end
+    
+    Developer --> RAGNotebook
+    RAGNotebook --> FAQGenerator
+    RAGNotebook --> DocsGenerator
+    
+    FAQGenerator --> FileWriter
+    DocsGenerator --> FileWriter
+    FileWriter --> FAQJson
+    FileWriter --> DocsYaml
+    FileWriter --> PickleSerializer
+    PickleSerializer --> PickleFile
+    
+    GitHubActions --> JupyterExecutor
+    JupyterExecutor --> RAGNotebook
+    FAQJson --> FileCopier
+    DocsYaml --> FileCopier
+    PickleFile --> FileCopier
+    FileCopier --> APIDirectory
+    
+    APIDirectory --> KnowledgeLoader
+    KnowledgeLoader --> PathResolver
+    PathResolver --> PickleLoader
+    PathResolver --> JSONLoader
+    PathResolver --> YAMLLoader
+    PathResolver --> FallbackData
+    
+    PickleLoader --> RAGRetriever
+    JSONLoader --> RAGRetriever
+    YAMLLoader --> RAGRetriever
+    FallbackData --> RAGRetriever
+    
+    RAGRetriever --> VectorStore
+    RAGRetriever --> OpenAIEmbeddings
+    VectorStore --> SemanticSearch
+    OpenAIEmbeddings --> SemanticSearch
+    SemanticSearch --> AgentTool
+    
+    classDef dev fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef gen fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef files fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef cicd fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef deploy fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef runtime fill:#f1f8e9,stroke:#388e3c,stroke-width:2px
+    classDef chatbot fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class Development dev
+    class KnowledgeGeneration gen
+    class GeneratedFiles files
+    class CICDPipeline cicd
+    class APIDeployment deploy
+    class RuntimeLoading runtime
+    class ChatbotRuntime chatbot

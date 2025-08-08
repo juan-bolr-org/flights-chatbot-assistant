@@ -7,6 +7,7 @@ graph TB
         UI[React Components]
         Auth[Authentication Layer]
         Chat[Chat Interface]
+        Voice[Voice Input]
         API_Client[API Client]
     end
     
@@ -16,18 +17,26 @@ graph TB
         Repos[Repository Layer]
         Models[SQLAlchemy Models]
         DB[(SQLite Database)]
+        ChatHistory[(Chat History DB)]
     end
     
     subgraph AIServices["AI Services"]
         Agent[LangGraph Agent]
         Tools[Flight Tools]
         Memory[Chat Memory]
+        RAGTool[FAQ RAG Tool]
         OpenAI[OpenAI GPT-4]
+        KnowledgeBase[Knowledge Base PKL]
+    end
+    
+    subgraph ExternalServices["External Services"]
+        AzureSpeech[Azure Speech Service]
     end
     
     Browser --> UI
     UI --> Auth
     UI --> Chat
+    UI --> Voice
     UI --> API_Client
     
     API_Client -->|HTTP/REST| Router
@@ -35,17 +44,25 @@ graph TB
     Services --> Repos
     Repos --> Models
     Models --> DB
+    Models --> ChatHistory
     
     Router -->|Chat Requests| Agent
     Agent --> Tools
     Agent --> Memory
+    Agent --> RAGTool
     Agent --> OpenAI
     Tools --> Services
+    RAGTool --> KnowledgeBase
+    
+    Voice -->|Audio Upload| AzureSpeech
+    AzureSpeech -->|Transcription| Router
     
     classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef ai fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef external fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     
     class Frontend frontend
     class Backend backend
     class AIServices ai
+    class ExternalServices external
