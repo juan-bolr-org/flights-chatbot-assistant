@@ -94,7 +94,7 @@ class ChatSessionSqliteRepository(ChatSessionRepository):
             self.db.refresh(session)
         return session
     
-    def delete_by_id(self, user_id: int, session_id: str) -> bool:
+    def delete_by_id(self, session_id: str) -> bool:
         """Delete a session by ID."""
         deleted_count = self.db.query(ChatSession).filter(
             ChatSession.id == session_id
