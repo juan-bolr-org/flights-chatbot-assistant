@@ -1,12 +1,16 @@
-export interface Token {
+export interface TokenSuccess {
     access_token: string;
     token_type: string;
-    detail: {
-        error_code?: string
-        message?: string
-    }
 }
 
+export interface TokenError {
+    detail: {
+        error_code?: string;
+        message?: string;
+    };
+}
+
+export type Token = TokenSuccess | TokenError;
 export interface User {
     id: number
     email: string
