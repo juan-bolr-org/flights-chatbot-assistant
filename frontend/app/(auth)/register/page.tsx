@@ -63,7 +63,7 @@ export default function RegisterPage() {
           router.push('/');
         }
       } else {
-        setError('root', { message: typeof response || 'Could not register the account' });
+        setError('root', { message: (typeof response === 'string' ? response : (response && typeof response === 'object' ? JSON.stringify(response) : 'Could not register the account')) });
       }
     } catch (err) {
       setError('root', { message: err instanceof Error ? err.message : 'Unknown registration error' });
