@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Flex, Callout } from '@radix-ui/themes';
+import { Flex, Callout } from '@radix-ui/themes';
 import { AlertCircleIcon } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { useChatInterface } from './useChatInterface';
@@ -16,9 +16,13 @@ export function ChatPanel({
     onOpenChange: (open: boolean) => void;
 }) {
     const { user } = useUser();
-    
+
     // Use a fixed session ID for the floating panel so users always see the same chat
-    const sessionId = 'floating-panel-session';
+    if (!user) {
+        return null;
+    }
+    const sessionId = `${user.name.trim().split(' ').join('-')}-session`;
+
 
     const {
         messages,
@@ -47,9 +51,9 @@ export function ChatPanel({
                 canClear={!!canClearChat}
             />
 
-            <ChatMessages 
-                messages={messages} 
-                isLoadingHistory={isLoadingHistory} 
+            <ChatMessages
+                messages={messages}
+                isLoadingHistory={isLoadingHistory}
             />
 
             {user?.token ? (

@@ -1,6 +1,10 @@
 export interface Token {
     access_token: string;
     token_type: string;
+    detail: {
+        error_code?: string;
+        message?: string;
+    };
 }
 
 export interface User {
