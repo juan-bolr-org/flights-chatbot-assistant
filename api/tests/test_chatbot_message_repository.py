@@ -198,9 +198,9 @@ class TestChatbotMessageRepository:
         
         assert len(messages) == 2
         assert all(msg.session_id == "session_1" for msg in messages)
-        # Verify that messages are ordered by created_at desc
-        assert messages[0].id == message3.id
-        assert messages[1].id == message1.id
+        # Verify that messages are ordered by created_at asc
+        assert messages[0].id == message1.id
+        assert messages[1].id == message3.id
 
     def test_count_by_user_id_and_session_success(self, message_repo, sample_user):
         """Test counting messages for a user and session."""
