@@ -12,6 +12,9 @@ This directory contains individual Mermaid diagram files that can be converted t
 | `04-authentication-flow.mmd` | JWT authentication and token refresh flow | Sequence Diagram |
 | `05-chat-agent-workflow.mmd` | LangGraph agent workflow with tools and services | Flow Chart |
 | `06-booking-flow.mmd` | Flight booking process through repository pattern | Sequence Diagram |
+| `07-knowledge-base-generation.mmd` | Generative AI Integration Diagram | Flow Diagram |
+| `08-flight-assistant-infra.png` | Infrastructure Diagram | Architecture Diagram |
+| `09-flight-assistant-CICD.png` | CICD Flow Diagram | Flow Diagram |
 
 ## 🎨 Converting to Images
 
