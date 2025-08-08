@@ -20,6 +20,10 @@ flights-chatbot-assistant/
 └── docker-compose.yml # Container orchestration
 ```
 
+## 📊 Architecture & Flow Diagrams
+
+Find all tecnical and flow diagrams in [`docs/diagrams`](docs/diagrams)
+
 ### Technology Stack
 
 **Frontend:**
