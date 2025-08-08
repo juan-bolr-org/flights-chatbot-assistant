@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import List, Optional
+from typing import Optional
 from repository import User
 from schemas import BookingCreate, BookingResponse, BookingUpdate, PaginatedResponse
 from resources.dependencies import get_current_user

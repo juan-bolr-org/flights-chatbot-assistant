@@ -6,7 +6,6 @@ from resources.logging import get_logger
 from services import ChatService, create_chat_service
 from exceptions import ApiException
 from utils.error_handlers import api_exception_to_http_exception
-from typing import Optional
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = get_logger("chat_router")

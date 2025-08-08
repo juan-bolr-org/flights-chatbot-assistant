@@ -8,7 +8,6 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 import re
 import os
-import uuid
 import aiosqlite
 from .logging import get_logger
 from constants import ApplicationConstants, EnvironmentKeys, get_env_str
