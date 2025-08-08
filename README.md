@@ -38,6 +38,14 @@ flights-chatbot-assistant/
 - **Memory**: MemorySaver for conversation persistence
 - **Vector Store**: In-memory vector store for FAQ retrieval
 
+**AI & Knowledge Base:**
+- **Agent Framework**: LangGraph with ReAct agents and tool calling
+- **Knowledge Base**: RAG system with Jupyter notebook generation
+- **Vector Store**: In-memory vector store with OpenAI embeddings
+- **Binary Optimization**: Pickle serialization for knowledge base
+- **Voice Processing**: Azure Cognitive Services Speech-to-Text
+- **Memory Management**: SQLite chat history with MemorySaver checkpoints
+
 **AI Chatbot:**
 - **LLM**: OpenAI GPT-4.1 with temperature 0 for consistent responses
 - **Agent Architecture**: LangGraph ReAct agents with tool calling
@@ -78,10 +86,25 @@ flights-chatbot-assistant/
 - **Multi-modal Input**: Text and voice input support
 - **Knowledge Retrieval**: Semantic search through airline policies and product documentation
 
-### Voice Features
-- **Speech-to-Text**: Convert voice messages to text using Azure Cognitive Services
-- **Audio Upload**: Support for various audio formats with automatic transcription
-- **Real-time Processing**: Fast and accurate voice recognition
+### Knowledge Base & RAG System
+- **RAG Implementation**: Retrieval-Augmented Generation with vector search
+- **Knowledge Generation**: Jupyter notebook-based knowledge base creation
+- **Binary Optimization**: Pickle serialization for fast knowledge base loading
+- **Vector Search**: OpenAI embeddings with semantic similarity matching
+- **Auto-sync**: CI/CD pipeline generates and copies knowledge base during build
+- **Fallback Support**: Hardcoded knowledge base when files unavailable
+
+### Audio & Voice Features
+- **Speech-to-Text**: Azure Cognitive Services integration
+- **Audio Upload**: Support for WAV, MP3, M4A, WEBM formats
+- **Real-time Processing**: Fast voice-to-text conversion in chat interface
+- **Audio Transcription**: Automatic transcription with chat message integration
+
+### Memory & State Management
+- **Conversation Persistence**: SQLite-based chat history storage
+- **User Context**: Per-user conversation memory with session isolation
+- **Memory Checkpoints**: LangGraph MemorySaver for agent state persistence
+- **Session Management**: Chat history retrieval and clearing capabilities
 
 ### Developer Experience
 - **Comprehensive Testing**: 80%+ test coverage across all layers
@@ -116,20 +139,129 @@ coverage html
 - **Docker** and Docker Compose (optional)
 - **OpenAI API Key**
 
+#### Installing System Dependencies
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+**macOS:**
+```bash
+brew install ffmpeg
+```
+
+**Windows:**
+```bash
+# Using chocolatey
+choco install ffmpeg
+
+# Or download from https://ffmpeg.org/download.html
+```
+
+## 🛠️ Development Tools
+
+### Helper Tool (Recommended)
+
+The API includes a comprehensive helper tool that automates development tasks, manages virtual environments, dependencies, and environment variables.
+
+**Unix-like systems (Linux, macOS):**
+```bash
+cd api
+./helper
+```
+
+**Windows:**
+```bash
+cd api
+python helper
+```
+
+### Helper Features
+
+The helper provides an interactive menu with the following options:
+
+- **Run API server** - Starts the FastAPI development server with configured environment variables
+- **Run tests** - Executes the test suite  
+- **Install/Check dependencies** - Automatically installs missing dependencies
+- **Configure environment variables** - Interactive environment variable management
+- **Open shell in virtual environment** - Opens a shell with the project environment activated
+- **Create/recreate virtual environment** - Sets up a fresh virtual environment
+
+### Helper Commands
+
+You can also run specific commands directly:
+
+```bash
+# Unix-like systems
+cd api
+./helper run          # Start the API server
+./helper test         # Run tests
+./helper install      # Install dependencies
+./helper env          # Configure environment variables
+./helper shell        # Open venv shell
+
+# Windows
+cd api
+python helper run     # Start the API server
+python helper test    # Run tests
+python helper install # Install dependencies
+python helper env     # Configure environment variables
+python helper shell   # Open venv shell
+```
+
+## ⚙️ Configuration
+
 ### Environment Variables
 
 Create a `.env` file in the root directory:
 
 ```env
-# OpenAI Configuration
+# OpenAI Configuration (Required)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# API Configuration (for Docker)
-API_URL=http://api:8000
+# API Configuration
+PORT=8000
+SECRET_KEY=your_secret_key_here
+
+# Azure Services (Optional)
+APPINSIGHTS_CONNECTION_STRING=your_azure_insights_connection
+AZURE_SPEECH_KEY=your_azure_speech_key
+AZURE_SPEECH_REGION=your_azure_speech_region
+AZURE_SPEECH_ENDPOINT=your_azure_speech_endpoint
 
 # Frontend Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8000
-PORT=3000
+API_URL=http://api:8000  # For Docker
+
+# Database (Optional)
+DATABASE_URL=sqlite:///./flights.db  # Default SQLite
+
+# Logging (Optional)
+LOG_LEVEL=INFO
+```
+
+### Setting Environment Variables
+
+**Option 1: Using Helper Tool (Interactive)**
+```bash
+cd api
+./helper env  # Interactive environment variable setup
+```
+
+**Option 2: Manual Setup**
+
+**Unix-like systems:**
+```bash
+export OPENAI_API_KEY="your_openai_api_key"
+export SECRET_KEY="your_secret_key"
+```
+
+**Windows:**
+```cmd
+set OPENAI_API_KEY=your_openai_api_key
+set SECRET_KEY=your_secret_key
 ```
 
 ### Knowledge Base Setup
@@ -153,7 +285,24 @@ jupyter notebook RAG.ipynb
 
 ### Development Setup
 
-#### Option 1: Docker Compose (Recommended)
+#### Option 1: Using Helper Tool (Recommended for API)
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd flights-chatbot-assistant
+
+# Setup and run API with helper
+cd api
+./helper run          # Automatically sets up environment and starts server
+
+# Setup frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+#### Option 2: Docker Compose
 
 ```bash
 # Clone the repository
@@ -169,7 +318,7 @@ docker-compose up --build
 # API Docs: http://localhost:8000/docs
 ```
 
-#### Option 2: Manual Setup
+#### Option 3: Manual Setup
 
 **Backend Setup:**
 ```bash
@@ -264,12 +413,13 @@ api/
 
 ```
 chatbot/
-├── RAG.ipynb              # Jupyter notebook to generate knowledge base files
-├── knowledge_base/        # Generated knowledge base files (created by notebook)
-│   ├── airline_faqs.json  # FAQ entries in JSON format (19 entries)
-│   └── product_docs.yaml  # Product documentation in YAML format (9 entries)
+├── RAG.ipynb              # Knowledge base generation notebook
+├── knowledge_base/        # Generated knowledge base files
+│   ├── airline_faqs.json  # FAQ entries (19 entries)
+│   ├── product_docs.yaml  # Product docs (9 entries)
+│   └── knowledge_base.pkl # Binary optimized knowledge base
 ├── requirements.txt       # Knowledge base dependencies
-└── README.md             # Knowledge base documentation
+└── .ipynb_checkpoints/   # Jupyter notebook checkpoints
 ```
 
 ## 🛠️ API Endpoints
@@ -297,6 +447,11 @@ chatbot/
 
 ### Health Check
 - `GET /health` - Service health status
+
+### Knowledge Base & Voice
+- `POST /chat/voice` - Process voice messages with transcription
+- `GET /chat/history` - Retrieve user chat history
+- `DELETE /chat/history` - Clear user chat history
 
 ## 🔐 Authentication & Session Management
 
@@ -403,6 +558,51 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 ```
 
+## 📊 Knowledge Base Management
+
+### Generating Knowledge Base
+
+The chatbot uses a RAG system that requires knowledge base generation:
+
+```bash
+# Navigate to chatbot directory
+cd chatbot
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate knowledge base using Jupyter
+jupyter nbconvert --to notebook --execute RAG.ipynb --output RAG_executed.ipynb
+
+# Verify files generated
+ls -la knowledge_base/
+# Expected output:
+# - airline_faqs.json (FAQ entries)  
+# - product_docs.yaml (Product documentation)
+# - knowledge_base.pkl (Binary optimized version)
+```
+
+### CI/CD Knowledge Base Integration
+
+The GitHub Actions workflow automatically generates and copies the knowledge base:
+
+```yaml
+# In .github/workflows/backend-api-ci.yml
+- name: Generate and copy knowledge base
+  run: |
+    pip install jupyter nbconvert pyyaml
+    cd chatbot
+    jupyter nbconvert --to notebook --execute RAG.ipynb --output RAG_executed.ipynb
+    cd ..
+    mkdir -p api/chatbot/knowledge_base
+    cp chatbot/knowledge_base/* api/chatbot/knowledge_base/
+```
+
+### Knowledge Base Content
+- **Airline FAQs** (19 entries): Baggage policies, check-in procedures, booking management
+- **Product Documentation** (9 entries): API features, booking system, authentication flows
+- **Binary Optimization**: Pickle files for 10x faster loading in production
+
 ## 🚀 Deployment
 
 ### Azure Deployment
@@ -435,6 +635,31 @@ RUN pip install -r requirements.txt
 CMD uvicorn --app-dir src main:app --host 0.0.0.0 --port $PORT
 ```
 
+### Docker Configuration
+
+Updated docker-compose.yml with proper build contexts:
+
+```yaml
+version: '3.8'
+services:
+  api:
+    build:
+      context: ./api  # API-specific context
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      - AZURE_SPEECH_REGION=${AZURE_SPEECH_REGION}
+      # ... other environment variables
+
+  front:
+    build:
+      context: ./frontend
+    depends_on:
+      - api
+```
+
+Knowledge base files are copied during CI/CD build process to ensure availability in containers.
+
 ## 🧪 Testing
 
 Use the provided test script to verify API functionality:
@@ -445,6 +670,37 @@ bash curls.sh
 ```
 
 This script tests user registration, login, flight creation, and booking operations.
+
+## 🔄 CI/CD Pipeline
+
+### GitHub Actions Workflows
+
+The project includes automated deployment workflows:
+
+- **Backend API CI**: `.github/workflows/backend-api-ci.yml`
+  - Runs tests and builds Docker images
+  - Generates knowledge base during build
+  - Copies knowledge base to API directory
+
+- **Container API Deployment**: `.github/workflows/flights-assistant-container-api.yml`
+  - Deploys API to Azure Web App
+  - Uses Azure Container Registry
+
+- **Frontend Deployment**: `.github/workflows/flights-assistant-frontend.yml`
+  - Deploys frontend to Azure Web App
+  - Environment-specific configuration
+
+### Build Process
+
+```bash
+# Local build with knowledge base
+cd chatbot
+jupyter nbconvert --to notebook --execute RAG.ipynb --output RAG_executed.ipynb
+cd ..
+
+# Docker build (includes knowledge base copy)
+docker-compose up --build
+```
 
 ## 📚 Documentation
 
@@ -459,6 +715,43 @@ This script tests user registration, login, flight creation, and booking operati
 ### Project Documentation
 - [User Stories](./user-stories.md) - Project requirements and user stories
 - [Chatbot Knowledge Base](./chatbot/README.md) - RAG system documentation
+
+## 🧪 Advanced Testing
+
+### API Testing Script
+
+Use the comprehensive test script:
+
+```bash
+# Test full chat workflow
+bash curls.sh
+
+# Tests include:
+# - User authentication with token
+# - Chat message sending
+# - Chat history retrieval  
+# - Conversation memory
+# - Chat history clearing
+```
+
+### Voice Feature Testing
+
+```bash
+# Test voice message endpoint
+curl -X POST "http://localhost:8000/chat/voice" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "audio=@test_audio.wav"
+```
+
+### Knowledge Base Testing
+
+```bash
+# Test FAQ retrieval
+curl -X POST "http://localhost:8000/chat" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "What is the baggage allowance?"}'
+```
 
 ## 🤝 Contributing
 
