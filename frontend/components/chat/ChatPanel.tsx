@@ -2,7 +2,6 @@
 
 import { Flex, Callout } from '@radix-ui/themes';
 import { AlertCircleIcon } from 'lucide-react';
-import { useUser } from '@/context/UserContext';
 import { useChatInterface } from './useChatInterface';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessages } from './ChatMessages';
@@ -15,14 +14,9 @@ export function ChatPanel({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const { user } = useUser();
 
     // Use a fixed session ID for the floating panel so users always see the same chat
-    if (!user) {
-        return null;
-    }
-    const sessionId = `${user.name.trim().split(' ').join('-')}-session`;
-
+    const sessionId = `chat-session`;
 
     const {
         messages,
@@ -31,7 +25,8 @@ export function ChatPanel({
         isClearingChat,
         sendMessage,
         clearChat,
-        canClearChat
+        canClearChat,
+        user,
     } = useChatInterface({
         sessionId: sessionId,
         defaultWelcomeMessage: "Hello! How can I assist you today?\nFeel free to ask me anything about your flight."
