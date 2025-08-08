@@ -32,12 +32,12 @@ class ChatSessionRepository(ABC):
         pass
     
     @abstractmethod
-    def update_alias(self, user_id: int, session_id: str, alias: str) -> Optional[ChatSession]:
+    def update_alias(self, session_id: str, alias: str) -> Optional[ChatSession]:
         """Update session alias."""
         pass
     
     @abstractmethod
-    def delete_by_id(self, user_id: int, session_id: str) -> bool:
+    def delete_by_id(self, session_id: str) -> bool:
         """Delete a session by ID."""
         pass
     
@@ -55,10 +55,8 @@ class ChatSessionSqliteRepository(ChatSessionRepository):
     
     def create(self, user_id: int, session_id: str, alias: str) -> ChatSession:
         """Create a new chat session."""
-        # Prefix session_id with user_id for uniqueness
-        prefixed_session_id = f"{user_id}_{session_id}"
         session = ChatSession(
-            id=prefixed_session_id,
+            id=session_id,
             user_id=user_id,
             alias=alias,
             created_at=datetime.datetime.now(datetime.timezone.utc),
@@ -81,11 +79,9 @@ class ChatSessionSqliteRepository(ChatSessionRepository):
     
     def find_by_user_and_session(self, user_id: int, session_id: str) -> Optional[ChatSession]:
         """Find a specific session for a user."""
-        # Prefix session_id with user_id for uniqueness
-        prefixed_session_id = f"{user_id}_{session_id}"
         return self.db.query(ChatSession).filter(
             ChatSession.user_id == user_id,
-            ChatSession.id == prefixed_session_id
+            ChatSession.id == session_id
         ).first()
     
     def update_alias(self, user_id: int, session_id: str, alias: str) -> Optional[ChatSession]:
@@ -100,10 +96,8 @@ class ChatSessionSqliteRepository(ChatSessionRepository):
     
     def delete_by_id(self, user_id: int, session_id: str) -> bool:
         """Delete a session by ID."""
-        # Prefix session_id with user_id for uniqueness
-        prefixed_session_id = f"{user_id}_{session_id}"
         deleted_count = self.db.query(ChatSession).filter(
-            ChatSession.id == prefixed_session_id
+            ChatSession.id == session_id
         ).delete()
         self.db.commit()
         return deleted_count > 0
